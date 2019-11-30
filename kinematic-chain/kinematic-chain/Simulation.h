@@ -9,7 +9,7 @@
 
 #include "Graphics/Vertex.h"
 
-using namespace std;;
+using namespace std;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -18,6 +18,7 @@ class Arm
 public:
 	float length;
 	float angle;
+	float altAngle;
 	Matrix GetWorldMatrix() { return Matrix::CreateScale(length, 1, 1) * Matrix::CreateRotationY(-XMConvertToRadians(angle)); }
 };
 
@@ -39,12 +40,17 @@ public:
 	Vector4 GetRandomColor();
 	float GetRandomFloat(float min, float max);
 
+	Vector4* parametrizationTable;
+
+	bool firstOption;
 	bool editMode;
 	Arm arm1;
 	Arm arm2;
 
 	void Init();
 
+	bool SetPosition(Vector2 position);
+	void SwapAngles();
 
 };
 

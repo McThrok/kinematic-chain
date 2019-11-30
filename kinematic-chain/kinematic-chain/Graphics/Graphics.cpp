@@ -65,6 +65,21 @@ void Graphics::RenderMainPanel() {
 		return;
 	}
 
+	ImGui::SliderFloat("angle 1", &simulation->arm1.angle, 0, 360, "%.0f");
+	ImGui::SliderFloat("angle 2", &simulation->arm2.angle, 0, 360, "%.0f");
+
+	ImGui::SliderFloat("length 1", &simulation->arm1.length, 20, 250, "%.0f");
+	ImGui::SliderFloat("length 2", &simulation->arm2.length, 20, 250, "%.0f");
+
+	static Vector2 pos(100, 0);
+	if(ImGui::SliderFloat2("pos", &pos.x, -100, 100, "%.0f")) {
+		simulation->SetPosition(pos);
+	}
+
+	static bool alt = false;
+	if (ImGui::Checkbox("second option", &alt))
+		simulation->SwapAngles();
+
 	ImGui::End();
 }
 
@@ -84,6 +99,13 @@ void Graphics::RenderVisualization()
 	RenderObsticles();
 	RenderArms();
 
+	//Matrix t1 = Matrix::CreateTranslation(Vector3(simulation->arm1.length, 0, 0));
+	//Matrix r1 = Matrix::CreateRotationY(XMConvertToRadians(-simulation->arm1.angle));
+	//Matrix r2 = Matrix::CreateRotationY(XMConvertToRadians(-simulation->arm2.angle));
+	//Matrix t2 = Matrix::CreateTranslation(Vector3(simulation->arm2.length, 0, 0));
+	//Matrix m = Matrix::CreateScale(30,30,30)*  t2*r2 * t1 * r1;
+
+	//RenderSquare(m, Vector4(0, 1, 1, 1));
 }
 
 void Graphics::RenderArms()
@@ -91,9 +113,10 @@ void Graphics::RenderArms()
 	Matrix m1 = simulation->arm1.GetWorldMatrix();
 	RenderSquare(m1, Vector4(1, 1, 1, 1));
 
-	Matrix t = Matrix::CreateTranslation(XMVector3TransformCoord(Vector3(1, 0, 0), m1));
+	Matrix t = Matrix::CreateTranslation(Vector3(simulation->arm1.length, 0, 0));
+	Matrix r = Matrix::CreateRotationY(XMConvertToRadians(-simulation->arm1.angle));
 	Matrix m2 = simulation->arm2.GetWorldMatrix();
-	RenderSquare(m2 * t, Vector4(1, 1, 1, 1));
+	RenderSquare(m2 * t * r, Vector4(1, 1, 1, 1));
 }
 void Graphics::RenderAxis()
 {
