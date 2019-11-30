@@ -65,20 +65,23 @@ void Graphics::RenderMainPanel() {
 		return;
 	}
 
-	ImGui::SliderFloat("angle 1", &simulation->arm1.angle, 0, 360, "%.0f");
-	ImGui::SliderFloat("angle 2", &simulation->arm2.angle, 0, 360, "%.0f");
 
-	ImGui::SliderFloat("length 1", &simulation->arm1.length, 20, 250, "%.0f");
-	ImGui::SliderFloat("length 2", &simulation->arm2.length, 20, 250, "%.0f");
+	ImGui::DragFloat("angle 1", &simulation->arm1.angle, 1);
+	ImGui::DragFloat("angle 2", &simulation->arm2.angle, 1);
+
+	ImGui::DragFloat("length 1", &simulation->arm1.length, 1);
+	ImGui::DragFloat("length 2", &simulation->arm2.length, 1);
 
 	static Vector2 pos(100, 0);
-	if(ImGui::SliderFloat2("pos", &pos.x, -100, 100, "%.0f")) {
+	if (ImGui::DragFloat2("pos", &pos.x, 1)) {
 		simulation->SetPosition(pos);
 	}
 
 	static bool alt = false;
 	if (ImGui::Checkbox("second option", &alt))
 		simulation->SwapAngles();
+
+	ImGui::Checkbox("edit mode", &simulation->editMode);
 
 	ImGui::End();
 }

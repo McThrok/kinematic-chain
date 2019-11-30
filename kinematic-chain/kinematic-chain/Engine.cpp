@@ -68,6 +68,15 @@ void Engine::HandleInput()
 				simulation.AddObsticle(p1, p2);
 			}
 		}
+		else
+		{
+			if (me.GetType() == MouseEvent::LPress)
+			{
+				Vector2 ScreenOffest(gfx.windowWidth / 2, -gfx.windowHeight / 2);
+				Vector2 p = Vector2(me.GetPosX(), -me.GetPosY()) - ScreenOffest;
+				simulation.SetPosition(p);
+			}
+		}
 
 	}
 }
