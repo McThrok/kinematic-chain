@@ -17,8 +17,8 @@ class Arm
 {
 public:
 	float length;
-	float startAngle;
-	Vector2 startPosition;
+	float angle;
+	Matrix GetWorldMatrix() { return Matrix::CreateScale(length, 1, 1) * Matrix::CreateRotationY(-XMConvertToRadians(angle)); }
 };
 
 class Obsticle
@@ -27,7 +27,7 @@ public:
 	Vector2 position;
 	Vector2 size;
 	Vector4 color;
-	Matrix GetWorldMatrix() { return Matrix::CreateScale(size.x, 0, size.y) * Matrix::CreateTranslation(position.x, 0, position.y); }
+	Matrix GetWorldMatrix() { return Matrix::CreateScale(size.x, 1, size.y) * Matrix::CreateTranslation(position.x, 0, position.y); }
 };
 
 class Simulation

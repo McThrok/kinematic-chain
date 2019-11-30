@@ -3,6 +3,12 @@
 void Simulation::Init()
 {
 	editMode = true;
+
+	arm1.length = 50;
+	arm1.angle = 45;
+
+	arm2.length = 100;
+	arm2.angle = 135;
 }
 
 void Simulation::AddObsticle(Vector2 p1, Vector2 p2)

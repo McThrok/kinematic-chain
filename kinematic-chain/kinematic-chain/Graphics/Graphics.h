@@ -38,7 +38,7 @@ private:
 	void InitGui(HWND hwnd);
 	void RenderGui();
 	void RenderMainPanel();
-	void RenderVisualisation();
+	void RenderVisualization();
 
 	void RenderObsticles();
 	void RenderAxis();

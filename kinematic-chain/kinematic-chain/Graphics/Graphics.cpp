@@ -29,7 +29,7 @@ void Graphics::RenderFrame()
 	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
 	this->deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	RenderVisualisation();
+	RenderVisualization();
 	RenderGui();
 
 	this->swapchain->Present(0, NULL);
@@ -68,7 +68,7 @@ void Graphics::RenderMainPanel() {
 	ImGui::End();
 }
 
-void Graphics::RenderVisualisation()
+void Graphics::RenderVisualization()
 {
 	this->deviceContext->IASetInputLayout(this->vertexshader.GetInputLayout());
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -81,15 +81,19 @@ void Graphics::RenderVisualisation()
 	this->deviceContext->PSSetConstantBuffers(0, 1, this->cbColoredObject.GetAddressOf());
 
 	RenderAxis();
-	//RenderObsticles();
-	//RenderArms();
+	RenderObsticles();
+	RenderArms();
 
 }
 
-
 void Graphics::RenderArms()
 {
+	Matrix m1 = simulation->arm1.GetWorldMatrix();
+	RenderSquare(m1, Vector4(1, 1, 1, 1));
 
+	Matrix t = Matrix::CreateTranslation(XMVector3TransformCoord(Vector3(1, 0, 0), m1));
+	Matrix m2 = simulation->arm2.GetWorldMatrix();
+	RenderSquare(m2 * t, Vector4(1, 1, 1, 1));
 }
 void Graphics::RenderAxis()
 {
