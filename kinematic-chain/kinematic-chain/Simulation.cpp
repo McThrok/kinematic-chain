@@ -114,5 +114,48 @@ void Simulation::Update()
 
 bool Simulation::CheckSegment(Vector2 v1, Vector2 v2, Vector4& color)
 {
+	for (auto& o : obsitcles)
+	{
+		Vector2 p = o.position;
+		Vector2 s = o.size;
+
+		bool intersect = false;
+
+		if (SegmentIntersect(v1, v2, p, Vector2(p.x + s.x, p.y))
+			|| SegmentIntersect(v1, v2, p, Vector2(p.x, p.y + s.y))
+			|| SegmentIntersect(v1, v2, Vector2(p.x + s.x, p.y), p + s)
+			|| SegmentIntersect(v1, v2, Vector2(p.x, p.y + s.y), p + s))
+		{
+			color = o.color;
+			return false;
+		}
+	}
+
 	return true;
+}
+bool Simulation::SegmentIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2)
+{
+	int o1 = CheckOrientation(p1, q1, p2);
+	int o2 = CheckOrientation(p1, q1, q2);
+	int o3 = CheckOrientation(p2, q2, p1);
+	int o4 = CheckOrientation(p2, q2, q1);
+
+	if (o1 != o2 && o3 != o4) return true;
+
+	if (o1 == 0 && OnSegment(p1, p2, q1)) return true;
+	if (o2 == 0 && OnSegment(p1, q2, q1)) return true;
+	if (o3 == 0 && OnSegment(p2, p1, q2)) return true;
+	if (o4 == 0 && OnSegment(p2, q1, q2)) return true;
+
+	return false;
+}
+bool Simulation::OnSegment(Vector2 p, Vector2 q, Vector2 r)
+{
+	return q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) && q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y);
+}
+
+int Simulation::CheckOrientation(Vector2 p, Vector2 q, Vector2 r)
+{
+	int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+	return (val == 0) ? 0 : (val > 0) ? 1 : 2;
 }
