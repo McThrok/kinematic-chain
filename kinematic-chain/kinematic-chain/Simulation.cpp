@@ -17,6 +17,9 @@ void Simulation::Init()
 
 void Simulation::AddObsticle(Vector2 p1, Vector2 p2)
 {
+	if (p1.x * p2.x < 0 && p1.y * p2.y < 0)
+		return;
+
 	Obsticle o;
 	o.position = Vector2(min(p1.x, p2.x), min(p1.y, p2.y));
 	o.size = Vector2(abs(p1.x - p2.x), abs(p1.y - p2.y));
@@ -77,4 +80,39 @@ void Simulation::SwapAngles()
 float Simulation::GetRandomFloat(float min, float max)
 {
 	return  std::uniform_real_distribution<float>{min, max}(gen);
+}
+
+void Simulation::Update()
+{
+	Vector2 v1(0, 0);
+
+	for (int i = 0; i < 360; i++)
+	{
+		Matrix t1 = Matrix::CreateTranslation(Vector3(arm1.length, 0, 0));
+		Matrix r1 = Matrix::CreateRotationY(XMConvertToRadians(-i));
+
+		Vector3 w2 = XMVector3TransformCoord(Vector3(arm1.length, 0, 0), r1);
+		Vector2 v2(w2.x, w2.z);
+
+		for (int j = 0; j < 360; j++)
+		{
+			Matrix r2 = Matrix::CreateRotationY(XMConvertToRadians(-j));
+			Matrix m = r2 * t1 * r1;
+
+			Vector3 w3 = XMVector3TransformCoord(Vector3(arm2.length, 0, 0), m);
+			Vector2 v3(w3.x, w3.z);
+
+
+			Vector4 color(1, 1, 1, 1);
+			if (CheckSegment(v1, v2, color))
+				CheckSegment(v2, v3, color);
+
+			parametrizationTable[i * 360 + j] = color;
+		}
+	}
+}
+
+bool Simulation::CheckSegment(Vector2 v1, Vector2 v2, Vector4& color)
+{
+	return true;
 }

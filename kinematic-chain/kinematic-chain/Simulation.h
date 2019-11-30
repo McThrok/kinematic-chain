@@ -34,12 +34,6 @@ public:
 class Simulation
 {
 public:
-	mt19937 gen{ 0 };
-	vector<Obsticle> obsitcles;
-	void AddObsticle(Vector2 p1, Vector2 p2);
-	Vector4 GetRandomColor();
-	float GetRandomFloat(float min, float max);
-
 	Vector4* parametrizationTable;
 
 	bool firstOption;
@@ -48,9 +42,17 @@ public:
 	Arm arm2;
 
 	void Init();
+	void Update();
 
 	bool SetPosition(Vector2 position);
 	void SwapAngles();
+	bool CheckSegment(Vector2 v1, Vector2 v2, Vector4& color);
 
+
+	mt19937 gen{ 0 };
+	vector<Obsticle> obsitcles;
+	void AddObsticle(Vector2 p1, Vector2 p2);
+	Vector4 GetRandomColor();
+	float GetRandomFloat(float min, float max);
 };
 
