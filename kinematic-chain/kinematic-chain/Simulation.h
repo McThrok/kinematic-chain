@@ -5,33 +5,41 @@
 #include <DirectXMath.h>
 #include <SimpleMath.h>
 #include <algorithm>
+#include <random>
 
 #include "Graphics/Vertex.h"
 
-namespace sm = DirectX::SimpleMath;
-namespace dx = DirectX;
+using namespace std;;
+using namespace DirectX;
+using namespace DirectX::SimpleMath;
 
 class Arm
 {
 public:
 	float length;
 	float startAngle;
-	sm::Vector2 startPosition;
+	Vector2 startPosition;
 };
 
 class Obsticle
 {
 public:
-	sm::Vector2 position;
-	sm::Vector2 size;
-	sm::Vector3 color;
+	Vector2 position;
+	Vector2 size;
+	Vector4 color;
+	Matrix GetWorldMatrix() { return Matrix::CreateScale(size.x, 0, size.y) * Matrix::CreateTranslation(position.x, 0, position.y); }
 };
 
 class Simulation
 {
 public:
-	std::vector<Obsticle> obsitcles;
+	mt19937 gen{ 0 };
+	vector<Obsticle> obsitcles;
+	void AddObsticle(Vector2 p1, Vector2 p2);
+	Vector4 GetRandomColor();
+	float GetRandomFloat(float min, float max);
 
+	bool editMode;
 	Arm arm1;
 	Arm arm2;
 

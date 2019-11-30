@@ -10,6 +10,7 @@ public:
 	bool ProcessMessages();
 	void Update();
 	void RenderFrame();
+	void HandleInput();
 
 private:
 	Timer timer;

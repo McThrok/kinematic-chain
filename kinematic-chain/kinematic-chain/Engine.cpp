@@ -26,6 +26,10 @@ void Engine::Update()
 	float dt = timer.GetMilisecondsElapsed();
 	timer.Restart();
 
+	HandleInput();
+}
+void Engine::HandleInput()
+{
 	while (!keyboard.CharBufferIsEmpty())
 	{
 		unsigned char ch = keyboard.ReadChar();
@@ -37,45 +41,35 @@ void Engine::Update()
 		unsigned char keycode = kbe.GetKeyCode();
 	}
 
+
+	//for edit mode
+	static bool adding = false;
+	static int x = 0, y = 0;
+
 	while (!mouse.EventBufferIsEmpty())
 	{
 		MouseEvent me = mouse.ReadEvent();
-		if (mouse.IsRightDown())
+
+		if (simulation.editMode)
 		{
-			if (me.GetType() == MouseEvent::EventType::RAW_MOVE)
+			if (!adding && mouse.IsLeftDown())
 			{
-				this->gfx.camera.AdjustRotation(-(float)me.GetPosY() * 0.01f, 0, -(float)me.GetPosX() * 0.01f);
+				x = mouse.GetPosX();
+				y = mouse.GetPosY();
+				adding = true;
+			}
+			else if (adding && !mouse.IsLeftDown())
+			{
+				adding = false;
+				Vector2 ScreenOffest(gfx.windowWidth / 2, -gfx.windowHeight / 2);
+				auto p1 = Vector2(x, -y) - ScreenOffest;
+				auto p2 = Vector2(mouse.GetPosX(), -mouse.GetPosY()) - ScreenOffest;
+
+				simulation.AddObsticle(p1, p2);
 			}
 		}
-	}
 
-	const float cameraSpeed = 0.006f;
-
-	if (keyboard.KeyIsPressed('W'))
-	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetForwardVector() * cameraSpeed * dt);
 	}
-	if (keyboard.KeyIsPressed('S'))
-	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetBackwardVector() * cameraSpeed * dt);
-	}
-	if (keyboard.KeyIsPressed('A'))
-	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetLeftVector() * cameraSpeed * dt);
-	}
-	if (keyboard.KeyIsPressed('D'))
-	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetRightVector() * cameraSpeed * dt);
-	}
-	if (keyboard.KeyIsPressed('Q'))
-	{
-		this->gfx.camera.AdjustPosition(0.0f, 0.0f, cameraSpeed * dt);
-	}
-	if (keyboard.KeyIsPressed('E'))
-	{
-		this->gfx.camera.AdjustPosition(0.0f, 0.0f, -cameraSpeed * dt);
-	}
-
 }
 
 void Engine::RenderFrame()

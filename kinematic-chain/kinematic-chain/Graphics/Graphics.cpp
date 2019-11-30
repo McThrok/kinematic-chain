@@ -80,16 +80,34 @@ void Graphics::RenderVisualisation()
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->cbColoredObject.GetAddressOf());
 	this->deviceContext->PSSetConstantBuffers(0, 1, this->cbColoredObject.GetAddressOf());
 
+	RenderAxis();
+	//RenderObsticles();
+	//RenderArms();
+
 }
-void Graphics::RenderModel(Matrix worldMatrix)
+
+
+void Graphics::RenderArms()
 {
-	float width = 0.3f;
-	RenderCube(Matrix::CreateScale(width, width, width) * worldMatrix, { 0.3f, 0.3f, 0.3f, 1 });
-	RenderCube(Matrix::CreateTranslation(width, 0, 0) * Matrix::CreateScale(1, width, width) * worldMatrix, { 1,0,0,1 });
-	RenderCube(Matrix::CreateTranslation(0, width, 0) * Matrix::CreateScale(width, 1, width) * worldMatrix, { 0,1,0,1 });
-	RenderCube(Matrix::CreateTranslation(0, 0, width) * Matrix::CreateScale(width, width, 1) * worldMatrix, { 0,0,1,1 });
+
 }
-void Graphics::RenderCube(Matrix worldMatrix, Vector4 color)
+void Graphics::RenderAxis()
+{
+	float thickness = 2;
+	Matrix center = Matrix::CreateTranslation(-0.5f, 0, -0.5f);
+	Matrix xwm = center * Matrix::CreateScale(windowWidth, 0, thickness);
+	Matrix ywm = center * Matrix::CreateScale(thickness, 0, windowWidth);
+	RenderSquare(xwm, Vector4(0.8, 0, 0, 1));
+	RenderSquare(ywm, Vector4(0, 0.8, 0, 1));
+}
+
+void Graphics::RenderObsticles()
+{
+	for (auto& o : simulation->obsitcles)
+		RenderSquare(o.GetWorldMatrix(), o.color);
+}
+
+void Graphics::RenderSquare(Matrix worldMatrix, Vector4 color)
 {
 	UINT offset = 0;
 
@@ -98,9 +116,9 @@ void Graphics::RenderCube(Matrix worldMatrix, Vector4 color)
 	cbColoredObject.data.color = color;
 
 	cbColoredObject.ApplyChanges();
-	this->deviceContext->IASetVertexBuffers(0, 1, vbCube.GetAddressOf(), vbCube.StridePtr(), &offset);
-	this->deviceContext->IASetIndexBuffer(ibCube.Get(), DXGI_FORMAT_R32_UINT, 0);
-	this->deviceContext->DrawIndexed(ibCube.BufferSize(), 0, 0);
+	this->deviceContext->IASetVertexBuffers(0, 1, vbSquare.GetAddressOf(), vbSquare.StridePtr(), &offset);
+	this->deviceContext->IASetIndexBuffer(ibSquare.Get(), DXGI_FORMAT_R32_UINT, 0);
+	this->deviceContext->DrawIndexed(ibSquare.BufferSize(), 0, 0);
 }
 
 bool Graphics::InitializeDirectX(HWND hwnd)
@@ -263,66 +281,29 @@ bool Graphics::InitializeShaders()
 	if (!pixelshader.Initialize(this->device, L"my_ps.cso"))
 		return false;
 
-	if (!diagonalPixelshader.Initialize(this->device, L"diagonal_ps.cso"))
-		return false;
-
 	return true;
 }
 
 bool Graphics::InitializeScene()
 {
 	VertexPN v[] = {
-		VertexPN(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f),
-		VertexPN(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f),
-		VertexPN(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f),
-		VertexPN(0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f),
-
-		VertexPN(1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f),
-		VertexPN(0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f),
-		VertexPN(0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f),
-		VertexPN(1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f),
-
-		VertexPN(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f),
-		VertexPN(1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f),
-		VertexPN(1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f),
-		VertexPN(1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f),
-
-		VertexPN(0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f),
-		VertexPN(0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f),
-		VertexPN(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f),
-		VertexPN(0.0f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f),
-
-		VertexPN(0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f),
-		VertexPN(1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f),
-		VertexPN(1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f),
-		VertexPN(0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f),
-
-		VertexPN(0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f),
-		VertexPN(1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f),
-		VertexPN(1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f),
-		VertexPN(0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f)
+		VertexPN(0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f),
+		VertexPN(1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f),
+		VertexPN(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+		VertexPN(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f)
 	};
 
-	int indices[] =
-	{
-		0, 2, 3, 0,1, 2,
-		4, 6, 7, 4,5, 6,
-		8, 10, 11, 8, 9, 10,
-		12, 14, 15, 12, 13, 14,
-		16, 18, 19, 16, 17, 18,
-		20, 22, 23, 20, 21, 22,
-	};
+	int indices[] = { 0, 2, 3, 0,1, 2 };
 
-	this->vbCube.Initialize(this->device.Get(), v, ARRAYSIZE(v));
-	this->ibCube.Initialize(this->device.Get(), indices, ARRAYSIZE(indices));
+	this->vbSquare.Initialize(this->device.Get(), v, ARRAYSIZE(v));
+	this->ibSquare.Initialize(this->device.Get(), indices, ARRAYSIZE(indices));
 
 	//Initialize Constant Buffer(s)
 	this->cbColoredObject.Initialize(this->device.Get(), this->deviceContext.Get());
 	this->cbLight.Initialize(this->device.Get(), this->deviceContext.Get());
 
-
 	camera.SetPosition(0, -5.0f, 0);
-	camera.SetOrthogonalProjection(windowWidth,windowHeight, 0.1f, 1000.0f);
+	camera.SetOrthogonalProjection(windowWidth, windowHeight, 0.1f, 1000.0f);
 
 	return true;
 }

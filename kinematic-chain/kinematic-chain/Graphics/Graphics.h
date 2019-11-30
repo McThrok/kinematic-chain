@@ -27,6 +27,9 @@ public:
 	void RenderFrame();
 	Camera camera;
 	Simulation* simulation;
+
+	int windowWidth = 0;
+	int windowHeight = 0;
 private:
 	bool InitializeDirectX(HWND hwnd);
 	bool InitializeShaders();
@@ -36,8 +39,12 @@ private:
 	void RenderGui();
 	void RenderMainPanel();
 	void RenderVisualisation();
-	void RenderModel(Matrix worldMatrix);
-	void RenderCube(Matrix worldMatrix, Vector4 color);
+
+	void RenderObsticles();
+	void RenderAxis();
+	void RenderArms();
+	void RenderSquare(Matrix worldMatrix, Vector4 color);
+
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext;
@@ -46,13 +53,12 @@ private:
 
 	VertexShader vertexshader;
 	PixelShader pixelshader;
-	PixelShader diagonalPixelshader;
 
 	ConstantBuffer<ColoredObjectBuffer> cbColoredObject;
 	ConstantBuffer<LightBuffer> cbLight;
 
-	VertexBuffer<VertexPN> vbCube;
-	IndexBuffer ibCube;
+	VertexBuffer<VertexPN> vbSquare;
+	IndexBuffer ibSquare;
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilBuffer;
@@ -62,7 +68,5 @@ private:
 	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> spriteFont;
 
-	int windowWidth = 0;
-	int windowHeight = 0;
 	Timer fpsTimer;
 };
