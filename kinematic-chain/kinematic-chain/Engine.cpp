@@ -43,38 +43,45 @@ void Engine::HandleInput()
 
 
 	//for edit mode
-	static bool adding = false;
 	static int x = 0, y = 0;
 
 	while (!mouse.EventBufferIsEmpty())
 	{
 		MouseEvent me = mouse.ReadEvent();
 
-		if (simulation.editMode)
+		if (keyboard.KeyIsPressed(0x10))//shift
 		{
-			if (!adding && mouse.IsLeftDown())
+			if (me.GetType() == MouseEvent::RPress)
 			{
-				x = mouse.GetPosX();
-				y = mouse.GetPosY();
-				adding = true;
+				simulation.Select(me.GetPosX() - gfx.windowWidth / 2, -me.GetPosY() + gfx.windowHeight / 2);
 			}
-			else if (adding && !mouse.IsLeftDown())
+			if (me.GetType() == MouseEvent::LPress)
 			{
-				adding = false;
+				x = me.GetPosX();
+				y = me.GetPosY();
+			}
+			if (me.GetType() == MouseEvent::LRelease)
+			{
 				Vector2 ScreenOffest(gfx.windowWidth / 2, -gfx.windowHeight / 2);
 				auto p1 = Vector2(x, -y) - ScreenOffest;
-				auto p2 = Vector2(mouse.GetPosX(), -mouse.GetPosY()) - ScreenOffest;
+				auto p2 = Vector2(me.GetPosX(), -me.GetPosY()) - ScreenOffest;
 
 				simulation.AddObsticle(p1, p2);
 			}
 		}
-		else
+		if (keyboard.KeyIsPressed(0x11))//lctrl
 		{
 			if (me.GetType() == MouseEvent::LPress)
 			{
 				Vector2 ScreenOffest(gfx.windowWidth / 2, -gfx.windowHeight / 2);
 				Vector2 p = Vector2(me.GetPosX(), -me.GetPosY()) - ScreenOffest;
-				simulation.SetPosition(p);
+				simulation.SetPosition(p, true);
+			}
+			if (me.GetType() == MouseEvent::RPress)
+			{
+				Vector2 ScreenOffest(gfx.windowWidth / 2, -gfx.windowHeight / 2);
+				Vector2 p = Vector2(me.GetPosX(), -me.GetPosY()) - ScreenOffest;
+				simulation.SetPosition(p, false);
 			}
 		}
 

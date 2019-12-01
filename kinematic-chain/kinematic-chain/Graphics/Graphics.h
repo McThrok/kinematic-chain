@@ -43,7 +43,7 @@ private:
 	void RenderParametrisation();
 	void RenderObsticles();
 	void RenderAxis();
-	void RenderArms();
+	void RenderArms(bool start, Vector4 color);
 	void RenderSquare(Matrix worldMatrix, Vector4 color);
 
 	void UpdateTexture();

@@ -2,13 +2,17 @@
 
 void Simulation::Init()
 {
-	editMode = true;
-	firstOption = false;
+	useAlt = false;
+
+	selectedIdx = -1;
 
 	arm1.length = 150;
 	arm2.length = 100;
+	arm1.useAlt = &useAlt;
+	arm2.useAlt = &useAlt;
 
-	SetPosition(Vector2(150, 100));
+	SetPosition(Vector2(150, 100), true);
+	SetPosition(Vector2(100, 150), false);
 
 	parametrizationTable = new Vector4[360 * 360];
 }
@@ -28,6 +32,32 @@ void Simulation::AddObsticle(Vector2 p1, Vector2 p2)
 
 	obsitcles.push_back(o);
 }
+void Simulation::DeleteSelected()
+{
+	if (selectedIdx == -1) return;
+
+	obsitcles.erase(obsitcles.begin() + selectedIdx, obsitcles.begin() + selectedIdx + 1);
+	selectedIdx = -1;
+}
+void Simulation::Select(int x, int y)
+{
+	for (int i = obsitcles.size() - 1; i >= 0; i--)
+	{
+		Obsticle& o = obsitcles[i];
+		float x1 = o.position.x;
+		float x2 = o.position.x + o.size.x;
+		float y1 = o.position.y;
+		float y2 = o.position.y + o.size.y;
+
+		if (x1 <= x && x <= x2 && y1 <= y && y <= y2)
+		{
+			selectedIdx = i;
+			return;
+		}
+	}
+
+	selectedIdx = -1;
+}
 
 Vector4 Simulation::GetRandomColor()
 {
@@ -38,7 +68,7 @@ Vector4 Simulation::GetRandomColor()
 }
 
 
-bool Simulation::SetPosition(Vector2 position)
+bool Simulation::SetPosition(Vector2 position, bool start)
 {
 	float l1 = arm1.length;
 	float l2 = arm2.length;
@@ -61,21 +91,35 @@ bool Simulation::SetPosition(Vector2 position)
 	Vector2 w1 = position - v1;
 	Vector2 w2 = position - v2;
 
-	arm1.angle = XMConvertToDegrees(XMScalarACos(Vector2(1, 0).Dot(v1) / v1.Length()));
-	arm2.angle = XMConvertToDegrees(XMScalarACos(v1.Dot(w1) / v1.Length() / w1.Length()));
-	if (((Vector3)XMVector2Cross(Vector2(1, 0), v1)).x < 0) arm1.angle *= -1;
-	if (((Vector3)XMVector2Cross(v1, w1)).x < 0) arm2.angle *= -1;
+	float* angle1;
+	float* angle2;
+	float* angleAlt1;
+	float* angleAlt2;
 
-	arm1.altAngle = XMConvertToDegrees(XMScalarACos(Vector2(1, 0).Dot(v2) / v2.Length()));
-	arm2.altAngle = XMConvertToDegrees(XMScalarACos(v2.Dot(w2) / v2.Length() / w2.Length()));
-	if (((Vector3)XMVector2Cross(Vector2(1, 0), v2)).x < 0) arm1.altAngle *= -1;
-	if (((Vector3)XMVector2Cross(v2, w2)).x < 0) arm2.altAngle *= -1;
-}
+	if (start)
+	{
+		angle1 = &arm1.startAngle;
+		angle2 = &arm2.startAngle;
+		angleAlt1 = &arm1.startAngleAlt;
+		angleAlt2 = &arm2.startAngleAlt;
+	}
+	else
+	{
+		angle1 = &arm1.endAngle;
+		angle2 = &arm2.endAngle;
+		angleAlt1 = &arm1.endAngleAlt;
+		angleAlt2 = &arm2.endAngleAlt;
+	}
 
-void Simulation::SwapAngles()
-{
-	swap(arm1.angle, arm1.altAngle);
-	swap(arm2.angle, arm2.altAngle);
+	*angle1 = XMConvertToDegrees(XMScalarACos(Vector2(1, 0).Dot(v1) / v1.Length()));
+	*angle2 = XMConvertToDegrees(XMScalarACos(v1.Dot(w1) / v1.Length() / w1.Length()));
+	if (((Vector3)XMVector2Cross(Vector2(1, 0), v1)).x < 0) *angle1 *= -1;
+	if (((Vector3)XMVector2Cross(v1, w1)).x < 0) *angle2 *= -1;
+
+	*angleAlt1 = XMConvertToDegrees(XMScalarACos(Vector2(1, 0).Dot(v2) / v2.Length()));
+	*angleAlt2 = XMConvertToDegrees(XMScalarACos(v2.Dot(w2) / v2.Length() / w2.Length()));
+	if (((Vector3)XMVector2Cross(Vector2(1, 0), v2)).x < 0) *angleAlt1 *= -1;
+	if (((Vector3)XMVector2Cross(v2, w2)).x < 0) *angleAlt2 *= -1;
 }
 
 float Simulation::GetRandomFloat(float min, float max)

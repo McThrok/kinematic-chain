@@ -65,23 +65,22 @@ void Graphics::RenderMainPanel() {
 		return;
 	}
 
+	ImGui::Text("Arm 1");
+	ImGui::DragFloat("length##1", &simulation->arm1.length, 1);
+	ImGui::DragFloat("start angle##start1", &simulation->arm1.startAngle, 1);
+	ImGui::DragFloat("start angle alt##startAlt1", &simulation->arm1.startAngleAlt, 1);
+	ImGui::DragFloat("end angle##end1", &simulation->arm1.endAngle, 1);
+	ImGui::DragFloat("end angle alt##endAlt1", &simulation->arm1.endAngleAlt, 1);
 
-	ImGui::DragFloat("angle 1", &simulation->arm1.angle, 1);
-	ImGui::DragFloat("angle 2", &simulation->arm2.angle, 1);
+	ImGui::Text("Arm 2");
+	ImGui::DragFloat("length##2", &simulation->arm2.length, 1);
+	ImGui::DragFloat("start angle##start2", &simulation->arm2.startAngle, 1);
+	ImGui::DragFloat("start angle alt##startAlt2", &simulation->arm2.startAngleAlt, 1);
+	ImGui::DragFloat("end angle##end2", &simulation->arm2.endAngle, 1);
+	ImGui::DragFloat("end angle alt##endAlt2", &simulation->arm2.endAngleAlt, 1);
 
-	ImGui::DragFloat("length 1", &simulation->arm1.length, 1);
-	ImGui::DragFloat("length 2", &simulation->arm2.length, 1);
-
-	//static Vector2 pos(100, 0);
-	//if (ImGui::DragFloat2("pos", &pos.x, 1)) {
-	//	simulation->SetPosition(pos);
-	//}
-
-	static bool alt = false;
-	if (ImGui::Checkbox("second option", &alt))
-		simulation->SwapAngles();
-
-	ImGui::Checkbox("edit mode", &simulation->editMode);
+	ImGui::Separator();
+	ImGui::Checkbox("use alt", &simulation->useAlt);
 
 	if (ImGui::Button("Update scene"))
 	{
@@ -89,6 +88,20 @@ void Graphics::RenderMainPanel() {
 		UpdateTexture();
 	}
 
+	ImGui::Separator();
+
+	int idx = simulation->selectedIdx;
+	if (idx != -1) {
+		Obsticle& o = simulation->obsitcles[idx];
+
+		ImGui::DragFloat2("position", &o.position.x, 1);
+		ImGui::DragFloat2("size", &o.size.x, 1);
+
+		if (ImGui::Button("Delete"))
+			simulation->DeleteSelected();
+
+		ImGui::ColorPicker3("color", &o.color.x);
+	}
 	ImGui::End();
 }
 
@@ -106,7 +119,8 @@ void Graphics::RenderVisualization()
 
 	RenderAxis();
 	RenderObsticles();
-	RenderArms();
+	RenderArms(true, Vector4(1, 1, 0, 1));
+	RenderArms(false, Vector4(1, 0, 1, 1));
 
 	this->deviceContext->VSSetShader(texture_vs.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(texture_ps.GetShader(), NULL, 0);
@@ -118,15 +132,15 @@ void Graphics::RenderVisualization()
 	RenderParametrisation();
 }
 
-void Graphics::RenderArms()
+void Graphics::RenderArms(bool start, Vector4 color)
 {
-	Matrix m1 = simulation->arm1.GetWorldMatrix();
-	RenderSquare(m1, Vector4(1, 1, 1, 1));
+	Matrix m1 = simulation->arm1.GetWorldMatrix(start);
+	RenderSquare(m1, color);
 
 	Matrix t = Matrix::CreateTranslation(Vector3(simulation->arm1.length, 0, 0));
-	Matrix r = Matrix::CreateRotationY(XMConvertToRadians(-simulation->arm1.angle));
-	Matrix m2 = simulation->arm2.GetWorldMatrix();
-	RenderSquare(m2 * t * r, Vector4(1, 1, 1, 1));
+	Matrix r = Matrix::CreateRotationY(XMConvertToRadians(-simulation->arm1.GetAngle(start)));
+	Matrix m2 = simulation->arm2.GetWorldMatrix(start);
+	RenderSquare(m2 * t * r, color);
 }
 void Graphics::RenderAxis()
 {
@@ -162,7 +176,7 @@ void Graphics::RenderParametrisation()
 {
 	UINT offset = 0;
 
-	cbObject.data.worldMatrix = Matrix::CreateScale(360) * Matrix::CreateTranslation(-900, 0, -400);
+	cbObject.data.worldMatrix = Matrix::CreateScale(360) * Matrix::CreateTranslation(-930, 0, -470);
 	cbObject.data.wvpMatrix = cbObject.data.worldMatrix * camera.GetViewMatrix() * camera.GetProjectionMatrix();
 
 	cbObject.ApplyChanges();
