@@ -57,7 +57,7 @@ void Graphics::RenderGui() {
 }
 
 void Graphics::RenderMainPanel() {
-	ImGui::SetNextWindowSize(ImVec2(500, 950), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_Once);
 	ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_Once);
 	if (!ImGui::Begin("Main Panel"))
 	{
@@ -72,10 +72,10 @@ void Graphics::RenderMainPanel() {
 	ImGui::DragFloat("length 1", &simulation->arm1.length, 1);
 	ImGui::DragFloat("length 2", &simulation->arm2.length, 1);
 
-	static Vector2 pos(100, 0);
-	if (ImGui::DragFloat2("pos", &pos.x, 1)) {
-		simulation->SetPosition(pos);
-	}
+	//static Vector2 pos(100, 0);
+	//if (ImGui::DragFloat2("pos", &pos.x, 1)) {
+	//	simulation->SetPosition(pos);
+	//}
 
 	static bool alt = false;
 	if (ImGui::Checkbox("second option", &alt))
@@ -86,6 +86,7 @@ void Graphics::RenderMainPanel() {
 	if (ImGui::Button("Update scene"))
 	{
 		simulation->Update();
+		UpdateTexture();
 	}
 
 	ImGui::End();
@@ -106,6 +107,13 @@ void Graphics::RenderVisualization()
 	RenderAxis();
 	RenderObsticles();
 	RenderArms();
+
+	this->deviceContext->VSSetShader(texture_vs.GetShader(), NULL, 0);
+	this->deviceContext->PSSetShader(texture_ps.GetShader(), NULL, 0);
+	this->deviceContext->VSSetConstantBuffers(0, 1, this->cbObject.GetAddressOf());
+	this->deviceContext->PSSetConstantBuffers(0, 1, this->cbObject.GetAddressOf());
+	this->deviceContext->PSSetSamplers(0, 1, samplerState.GetAddressOf());
+	this->deviceContext->PSSetShaderResources(0, 1, my_textureRV.GetAddressOf());
 
 	RenderParametrisation();
 }
@@ -152,19 +160,15 @@ void Graphics::RenderSquare(Matrix worldMatrix, Vector4 color)
 
 void Graphics::RenderParametrisation()
 {
+	UINT offset = 0;
 
-	//this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
+	cbObject.data.worldMatrix = Matrix::CreateScale(360) * Matrix::CreateTranslation(-900, 0, -400);
+	cbObject.data.wvpMatrix = cbObject.data.worldMatrix * camera.GetViewMatrix() * camera.GetProjectionMatrix();
 
-	//UINT offset = 0;
-
-	//cbColoredObject.data.worldMatrix = worldMatrix;
-	//cbColoredObject.data.wvpMatrix = cbColoredObject.data.worldMatrix * camera.GetViewMatrix() * camera.GetProjectionMatrix();
-	//cbColoredObject.data.color = color;
-
-	//cbColoredObject.ApplyChanges();
-	//this->deviceContext->IASetVertexBuffers(0, 1, vbSquare.GetAddressOf(), vbSquare.StridePtr(), &offset);
-	//this->deviceContext->IASetIndexBuffer(ibSquare.Get(), DXGI_FORMAT_R32_UINT, 0);
-	//this->deviceContext->DrawIndexed(ibSquare.BufferSize(), 0, 0);
+	cbObject.ApplyChanges();
+	this->deviceContext->IASetVertexBuffers(0, 1, vbSquareT.GetAddressOf(), vbSquareT.StridePtr(), &offset);
+	this->deviceContext->IASetIndexBuffer(ibSquare.Get(), DXGI_FORMAT_R32_UINT, 0);
+	this->deviceContext->DrawIndexed(ibSquare.BufferSize(), 0, 0);
 
 }
 
@@ -305,7 +309,52 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		return false;
 	}
 
+	//Create sampler description for sampler state
+	CD3D11_SAMPLER_DESC sampDesc(D3D11_DEFAULT);
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	hr = this->device->CreateSamplerState(&sampDesc, this->samplerState.GetAddressOf()); //Create sampler state
+
+	D3D11_TEXTURE2D_DESC desc{};
+	desc.Width = 360;
+	desc.Height = 360;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	hr = this->device->CreateTexture2D(&desc, nullptr, this->my_texture.GetAddressOf());
+	hr = this->device->CreateShaderResourceView(my_texture.Get(), 0, my_textureRV.GetAddressOf());
+	deviceContext->PSSetShaderResources(0, 1, my_textureRV.GetAddressOf());
+
 	return true;
+}
+
+void Graphics::UpdateTexture()
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	deviceContext->Map(my_texture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	unsigned int* data = ((unsigned int*)mappedResource.pData);
+	Vector4* src = simulation->parametrizationTable;
+
+	for (int i = 0; i < 360; i++)
+	{
+		for (int j = 0; j < 360; j++)
+		{
+			Vector4 color = src[j + i * 360];
+			unsigned int a = 255U * color.w;
+			unsigned int r = 255U * color.x;
+			unsigned int g = 255U * color.y;
+			unsigned int b = 255U * color.z;
+			data[j + i * mappedResource.RowPitch / 4] = (a << 24) + (b << 16) + (g << 8) + r;
+		}
+	}
+
+	deviceContext->Unmap(my_texture.Get(), 0);
 }
 
 bool Graphics::InitializeShaders()
@@ -352,13 +401,22 @@ bool Graphics::InitializeScene()
 		VertexPN(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f)
 	};
 
+	VertexPT vT[] = {
+		VertexPT(0.0f, 0.0f, 1.0f, 0.0f, 1.0f),
+		VertexPT(1.0f, 0.0f, 1.0f, 1.0f, 1.0f),
+		VertexPT(1.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+		VertexPT(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+	};
+
 	int indices[] = { 0, 2, 3, 0,1, 2 };
 
 	this->vbSquare.Initialize(this->device.Get(), v, ARRAYSIZE(v));
+	this->vbSquareT.Initialize(this->device.Get(), vT, ARRAYSIZE(v));
 	this->ibSquare.Initialize(this->device.Get(), indices, ARRAYSIZE(indices));
 
 	//Initialize Constant Buffer(s)
 	this->cbColoredObject.Initialize(this->device.Get(), this->deviceContext.Get());
+	this->cbObject.Initialize(this->device.Get(), this->deviceContext.Get());
 
 	camera.SetPosition(0, -5.0f, 0);
 	camera.SetOrthogonalProjection(windowWidth, windowHeight, 0.1f, 1000.0f);

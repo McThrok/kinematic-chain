@@ -5,12 +5,10 @@ void Simulation::Init()
 	editMode = true;
 	firstOption = false;
 
-	arm1.length = 100;
-	arm1.angle = 30;
+	arm1.length = 150;
+	arm2.length = 100;
 
-	arm2.length = 50;
-	arm2.angle = 50;
-	SetPosition(Vector2(100, 50));
+	SetPosition(Vector2(150, 100));
 
 	parametrizationTable = new Vector4[360 * 360];
 }
@@ -24,6 +22,9 @@ void Simulation::AddObsticle(Vector2 p1, Vector2 p2)
 	o.position = Vector2(min(p1.x, p2.x), min(p1.y, p2.y));
 	o.size = Vector2(abs(p1.x - p2.x), abs(p1.y - p2.y));
 	o.color = GetRandomColor();
+
+	if (o.size.x == 0 || o.size.y == 0)
+		return;
 
 	obsitcles.push_back(o);
 }

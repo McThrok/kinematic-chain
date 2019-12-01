@@ -46,6 +46,8 @@ private:
 	void RenderArms();
 	void RenderSquare(Matrix worldMatrix, Vector4 color);
 
+	void UpdateTexture();
+
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext;
@@ -59,8 +61,10 @@ private:
 	PixelShader texture_ps;
 
 	ConstantBuffer<ColoredObjectBuffer> cbColoredObject;
+	ConstantBuffer<ObjectBuffer> cbObject;
 
 	VertexBuffer<VertexPN> vbSquare;
+	VertexBuffer<VertexPT> vbSquareT;
 	IndexBuffer ibSquare;
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
@@ -68,6 +72,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
 
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> my_texture;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> my_textureRV;
+	
 
 	Timer fpsTimer;
 };
