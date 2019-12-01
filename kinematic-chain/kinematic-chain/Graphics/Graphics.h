@@ -40,6 +40,7 @@ private:
 	void RenderMainPanel();
 	void RenderVisualization();
 
+	void RenderParametrisation();
 	void RenderObsticles();
 	void RenderAxis();
 	void RenderArms();
@@ -51,11 +52,13 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain> swapchain;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
 
-	VertexShader vertexshader;
-	PixelShader pixelshader;
+	VertexShader color_vs;
+	PixelShader color_ps;
+
+	VertexShader texture_vs;
+	PixelShader texture_ps;
 
 	ConstantBuffer<ColoredObjectBuffer> cbColoredObject;
-	ConstantBuffer<LightBuffer> cbLight;
 
 	VertexBuffer<VertexPN> vbSquare;
 	IndexBuffer ibSquare;
@@ -65,8 +68,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
 
-	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
-	std::unique_ptr<DirectX::SpriteFont> spriteFont;
 
 	Timer fpsTimer;
 };

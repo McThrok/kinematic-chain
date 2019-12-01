@@ -83,18 +83,23 @@ void Graphics::RenderMainPanel() {
 
 	ImGui::Checkbox("edit mode", &simulation->editMode);
 
+	if (ImGui::Button("Update scene"))
+	{
+		simulation->Update();
+	}
+
 	ImGui::End();
 }
 
 void Graphics::RenderVisualization()
 {
-	this->deviceContext->IASetInputLayout(this->vertexshader.GetInputLayout());
+	this->deviceContext->IASetInputLayout(this->color_vs.GetInputLayout());
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->RSSetState(this->rasterizerState.Get());
 	this->deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
 
-	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
-	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
+	this->deviceContext->VSSetShader(color_vs.GetShader(), NULL, 0);
+	this->deviceContext->PSSetShader(color_ps.GetShader(), NULL, 0);
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->cbColoredObject.GetAddressOf());
 	this->deviceContext->PSSetConstantBuffers(0, 1, this->cbColoredObject.GetAddressOf());
 
@@ -102,13 +107,7 @@ void Graphics::RenderVisualization()
 	RenderObsticles();
 	RenderArms();
 
-	//Matrix t1 = Matrix::CreateTranslation(Vector3(simulation->arm1.length, 0, 0));
-	//Matrix r1 = Matrix::CreateRotationY(XMConvertToRadians(-simulation->arm1.angle));
-	//Matrix r2 = Matrix::CreateRotationY(XMConvertToRadians(-simulation->arm2.angle));
-	//Matrix t2 = Matrix::CreateTranslation(Vector3(simulation->arm2.length, 0, 0));
-	//Matrix m = Matrix::CreateScale(30,30,30)*  t2*r2 * t1 * r1;
-
-	//RenderSquare(m, Vector4(0, 1, 1, 1));
+	RenderParametrisation();
 }
 
 void Graphics::RenderArms()
@@ -149,6 +148,24 @@ void Graphics::RenderSquare(Matrix worldMatrix, Vector4 color)
 	this->deviceContext->IASetVertexBuffers(0, 1, vbSquare.GetAddressOf(), vbSquare.StridePtr(), &offset);
 	this->deviceContext->IASetIndexBuffer(ibSquare.Get(), DXGI_FORMAT_R32_UINT, 0);
 	this->deviceContext->DrawIndexed(ibSquare.BufferSize(), 0, 0);
+}
+
+void Graphics::RenderParametrisation()
+{
+
+	//this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
+
+	//UINT offset = 0;
+
+	//cbColoredObject.data.worldMatrix = worldMatrix;
+	//cbColoredObject.data.wvpMatrix = cbColoredObject.data.worldMatrix * camera.GetViewMatrix() * camera.GetProjectionMatrix();
+	//cbColoredObject.data.color = color;
+
+	//cbColoredObject.ApplyChanges();
+	//this->deviceContext->IASetVertexBuffers(0, 1, vbSquare.GetAddressOf(), vbSquare.StridePtr(), &offset);
+	//this->deviceContext->IASetIndexBuffer(ibSquare.Get(), DXGI_FORMAT_R32_UINT, 0);
+	//this->deviceContext->DrawIndexed(ibSquare.BufferSize(), 0, 0);
+
 }
 
 bool Graphics::InitializeDirectX(HWND hwnd)
@@ -288,27 +305,39 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		return false;
 	}
 
-	spriteBatch = std::make_unique<DirectX::SpriteBatch>(this->deviceContext.Get());
-	spriteFont = std::make_unique<DirectX::SpriteFont>(this->device.Get(), L"Data\\Fonts\\comic_sans_ms_16.spritefont");
-
-
 	return true;
 }
 
 bool Graphics::InitializeShaders()
 {
-	D3D11_INPUT_ELEMENT_DESC layout[] =
+	D3D11_INPUT_ELEMENT_DESC layoutPN[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{"NORMAL", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	UINT numElements = ARRAYSIZE(layout);
+	UINT numElementsPN = ARRAYSIZE(layoutPN);
 
-	if (!vertexshader.Initialize(this->device, L"my_vs.cso", layout, numElements))
+	if (!color_vs.Initialize(this->device, L"my_vs.cso", layoutPN, numElementsPN))
 		return false;
 
-	if (!pixelshader.Initialize(this->device, L"my_ps.cso"))
+	if (!color_ps.Initialize(this->device, L"my_ps.cso"))
+		return false;
+
+
+	D3D11_INPUT_ELEMENT_DESC layoutPT[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	UINT numElementsPT = ARRAYSIZE(layoutPT);
+
+
+	if (!texture_vs.Initialize(this->device, L"texture_vs.cso", layoutPT, numElementsPT))
+		return false;
+
+	if (!texture_ps.Initialize(this->device, L"texture_ps.cso"))
 		return false;
 
 	return true;
@@ -330,7 +359,6 @@ bool Graphics::InitializeScene()
 
 	//Initialize Constant Buffer(s)
 	this->cbColoredObject.Initialize(this->device.Get(), this->deviceContext.Get());
-	this->cbLight.Initialize(this->device.Get(), this->deviceContext.Get());
 
 	camera.SetPosition(0, -5.0f, 0);
 	camera.SetOrthogonalProjection(windowWidth, windowHeight, 0.1f, 1000.0f);

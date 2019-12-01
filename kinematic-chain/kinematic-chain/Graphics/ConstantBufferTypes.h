@@ -8,9 +8,8 @@ struct ColoredObjectBuffer
 	DirectX::XMVECTOR color;
 };
 
-
-struct LightBuffer
+struct	ObjectBuffer
 {
-	DirectX::XMVECTOR position;
-	DirectX::XMVECTOR color;
+	DirectX::XMMATRIX wvpMatrix;
+	DirectX::XMMATRIX worldMatrix;
 };
