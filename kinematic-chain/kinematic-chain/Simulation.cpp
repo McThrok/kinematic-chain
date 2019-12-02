@@ -2,14 +2,16 @@
 
 void Simulation::Init()
 {
-	useAlt = false;
-
+	useAltStart = false;
+	useAltEnd = false;
 	selectedIdx = -1;
 
 	arm1.length = 150;
 	arm2.length = 100;
-	arm1.useAlt = &useAlt;
-	arm2.useAlt = &useAlt;
+	arm1.useAltStart = &useAltStart;
+	arm2.useAltStart = &useAltStart;
+	arm1.useAltEnd = &useAltEnd;
+	arm2.useAltEnd = &useAltEnd;
 
 	SetPosition(Vector2(150, 100), true);
 	SetPosition(Vector2(100, 150), false);
@@ -27,7 +29,7 @@ void Simulation::AddObsticle(Vector2 p1, Vector2 p2)
 	o.size = Vector2(abs(p1.x - p2.x), abs(p1.y - p2.y));
 	o.color = GetRandomColor();
 
-	if (o.size.x == 0 || o.size.y == 0)
+	if (o.size.x < 10 || o.size.y < 10)
 		return;
 
 	obsitcles.push_back(o);

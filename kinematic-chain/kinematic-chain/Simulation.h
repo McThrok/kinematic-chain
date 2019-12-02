@@ -21,9 +21,10 @@ public:
 	float startAngleAlt;
 	float endAngle;
 	float endAngleAlt;
-	bool *useAlt;
+	bool* useAltStart;
+	bool *useAltEnd;
 
-	float GetAngle(bool start) { return start ? *useAlt ? startAngleAlt : startAngle : *useAlt ? endAngleAlt : endAngle; }
+	float GetAngle(bool start) { return start ? *useAltStart ? startAngleAlt : startAngle : *useAltEnd ? endAngleAlt : endAngle; }
 	Matrix GetWorldMatrix(bool start) { return Matrix::CreateScale(length, 1, 1) * Matrix::CreateRotationY(-XMConvertToRadians(GetAngle(start))); }
 };
 
@@ -42,7 +43,8 @@ public:
 	Vector4* parametrizationTable;
 
 	int selectedIdx;
-	bool useAlt;
+	bool useAltStart;
+	bool useAltEnd;
 	Arm arm1;
 	Arm arm2;
 

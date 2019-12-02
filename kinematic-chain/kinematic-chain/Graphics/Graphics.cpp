@@ -57,7 +57,7 @@ void Graphics::RenderGui() {
 }
 
 void Graphics::RenderMainPanel() {
-	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(500, 450), ImGuiCond_Once);
 	ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_Once);
 	if (!ImGui::Begin("Main Panel"))
 	{
@@ -80,7 +80,8 @@ void Graphics::RenderMainPanel() {
 	ImGui::DragFloat("end angle alt##endAlt2", &simulation->arm2.endAngleAlt, 1);
 
 	ImGui::Separator();
-	ImGui::Checkbox("use alt", &simulation->useAlt);
+	ImGui::Checkbox("use alt start", &simulation->useAltStart);
+	ImGui::Checkbox("use alt end", &simulation->useAltEnd);
 
 	if (ImGui::Button("Update scene"))
 	{
