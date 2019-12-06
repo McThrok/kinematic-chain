@@ -104,7 +104,7 @@ void Graphics::RenderMainPanel() {
 
 	int idx = simulation->selectedIdx;
 	if (idx != -1) {
-		Obsticle& o = simulation->obsitcles[idx];
+		Obstacle& o = simulation->obstacles[idx];
 
 		ImGui::DragFloat2("position", &o.position.x, 1);
 		ImGui::DragFloat2("size", &o.size.x, 1);
@@ -130,7 +130,7 @@ void Graphics::RenderVisualization()
 	this->deviceContext->PSSetConstantBuffers(0, 1, this->cbColoredObject.GetAddressOf());
 
 	RenderAxis();
-	RenderObsticles();
+	RenderObstacles();
 	RenderArms();
 
 	this->deviceContext->VSSetShader(texture_vs.GetShader(), NULL, 0);
@@ -163,9 +163,9 @@ void Graphics::RenderAxis()
 	RenderSquare(ywm, Vector4(0, 0.8, 0, 1));
 }
 
-void Graphics::RenderObsticles()
+void Graphics::RenderObstacles()
 {
-	for (auto& o : simulation->obsitcles)
+	for (auto& o : simulation->obstacles)
 		RenderSquare(o.GetWorldMatrix(), o.color);
 }
 
