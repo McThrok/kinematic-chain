@@ -5,6 +5,8 @@ void Simulation::Init()
 	useAltStart = false;
 	useAltEnd = false;
 	selectedIdx = -1;
+	N = 360;
+	color = Vector4(1, 1, 1, 1);
 
 	arm1.length = 150;
 	arm2.length = 100;
@@ -16,7 +18,8 @@ void Simulation::Init()
 	SetPosition(Vector2(150, 100), true);
 	SetPosition(Vector2(100, 150), false);
 
-	parametrizationTable = new Vector4[360 * 360];
+	parametrizationTable = make_unique<Vector4[]>(N * N);
+	ffTable = make_unique<int[]>(N * N);
 }
 
 void Simulation::AddObsticle(Vector2 p1, Vector2 p2)
@@ -60,7 +63,6 @@ void Simulation::Select(int x, int y)
 
 	selectedIdx = -1;
 }
-
 Vector4 Simulation::GetRandomColor()
 {
 	float r = GetRandomFloat(0, 1);
@@ -68,8 +70,10 @@ Vector4 Simulation::GetRandomColor()
 	float b = GetRandomFloat(0, 1);
 	return Vector4(r, g, b, 1);
 }
-
-
+float Simulation::GetRandomFloat(float min, float max)
+{
+	return  std::uniform_real_distribution<float>{min, max}(gen);
+}
 bool Simulation::SetPosition(Vector2 position, bool start)
 {
 	float l1 = arm1.length;
@@ -124,16 +128,11 @@ bool Simulation::SetPosition(Vector2 position, bool start)
 	if (((Vector3)XMVector2Cross(v2, w2)).x < 0) *angleAlt2 *= -1;
 }
 
-float Simulation::GetRandomFloat(float min, float max)
-{
-	return  std::uniform_real_distribution<float>{min, max}(gen);
-}
-
 void Simulation::Update()
 {
 	Vector2 v1(0, 0);
 
-	for (int i = 0; i < 360; i++)
+	for (int i = 0; i < N; i++)
 	{
 		Matrix t1 = Matrix::CreateTranslation(Vector3(arm1.length, 0, 0));
 		Matrix r1 = Matrix::CreateRotationY(XMConvertToRadians(-i));
@@ -141,7 +140,7 @@ void Simulation::Update()
 		Vector3 w2 = XMVector3TransformCoord(Vector3(arm1.length, 0, 0), r1);
 		Vector2 v2(w2.x, w2.z);
 
-		for (int j = 0; j < 360; j++)
+		for (int j = 0; j < N; j++)
 		{
 			Matrix r2 = Matrix::CreateRotationY(XMConvertToRadians(-j));
 			Matrix m = r2 * t1 * r1;
@@ -150,11 +149,11 @@ void Simulation::Update()
 			Vector2 v3(w3.x, w3.z);
 
 
-			Vector4 color(1, 1, 1, 1);
+			Vector4 color = this->color;
 			if (CheckSegment(v1, v2, color))
 				CheckSegment(v2, v3, color);
 
-			parametrizationTable[i * 360 + j] = color;
+			parametrizationTable.get()[i * N + j] = color;
 		}
 	}
 }
@@ -200,9 +199,139 @@ bool Simulation::OnSegment(Vector2 p, Vector2 q, Vector2 r)
 {
 	return q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) && q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y);
 }
-
 int Simulation::CheckOrientation(Vector2 p, Vector2 q, Vector2 r)
 {
 	int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 	return (val == 0) ? 0 : (val > 0) ? 1 : 2;
+}
+
+void Simulation::ClearFloodTable()
+{
+	int* ff = ffTable.get();
+
+	for (int i = 0; i < N; i++)
+		for (int j = 0; j < N; j++)
+		{
+			int idx = i * N + j;
+			if (parametrizationTable.get()[idx] != this->color)
+				ff[idx] = -1;//blocked
+			else
+				ff[idx] = 1000000;
+		}
+}
+void Simulation::RunFlood(int aStart, int bStart, int aEnd, int bEnd)
+{
+	//aStart = 10;
+	//bStart = 10;
+	//aEnd = 12;
+	//bEnd = 10;
+	int* ff = ffTable.get();
+
+	queue<int> qA;
+	queue<int> qB;
+
+	qA.push(aStart);
+	qB.push(bStart);
+	ff[aStart * N + bStart] = 0;
+
+	while (!qA.empty())
+	{
+		int a = qA.front(); qA.pop();
+		int b = qB.front(); qB.pop();
+		if (a == aEnd && b == bEnd)
+			break;
+
+		int val = ff[a * N + b];
+
+		FloodStep(a + 1, b, val, qA, qB);
+		FloodStep(a - 1, b, val, qA, qB);
+		FloodStep(a, b + 1, val, qA, qB);
+		FloodStep(a, b - 1, val, qA, qB);
+	}
+
+}
+void Simulation::FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB)
+{
+	a = NormalizeAngle(a);
+	b = NormalizeAngle(b);
+	int* ff = ffTable.get();
+	int idx = a * N + b;
+
+	if (ff[idx] != -1 && ff[idx] > val+1)
+	{
+		ff[idx] = val + 1;
+		qA.push(a);
+		qB.push(b);
+	}
+
+}
+bool Simulation::RetrievePathStep(int a, int b, int val, vector<int>& angle1, vector<int>& angle2)
+{
+	a = NormalizeAngle(a);
+	b = NormalizeAngle(b);
+	int* ff = ffTable.get();
+	int idx = a * N + b;
+
+	if (ff[idx] != -1 && ff[idx] < val)
+	{
+		angle1.push_back(a);
+		angle2.push_back(b);
+		return true;
+	}
+	return false;
+}
+bool Simulation::RetrievePath(int aEnd, int bEnd, vector<int>& angle1, vector<int>& angle2)
+{
+	angle1.clear();
+	angle2.clear();
+
+	int a = aEnd;
+	int b = bEnd;
+	angle1.push_back(a);
+	angle2.push_back(b);
+
+	int* ff = ffTable.get();
+
+	while (true)
+	{
+		int val = ff[a * N + b];
+
+		if (val == 0)
+			return true;
+
+		if (RetrievePathStep(a + 1, b, val, angle1, angle2)) a += 1;
+		else if (RetrievePathStep(a - 1, b, val, angle1, angle2)) a -= 1;
+		else if (RetrievePathStep(a, b + 1, val, angle1, angle2)) b += 1;
+		else if (RetrievePathStep(a, b - 1, val, angle1, angle2)) b -= 1;
+		else return false;
+
+		a = NormalizeAngle(a);
+		b = NormalizeAngle(b);
+	}
+
+	return true;
+
+}
+bool Simulation::FindPath(vector<int>& angle1, vector<int>& angle2)
+{
+	Update();
+	ClearFloodTable();
+
+	int aStart = NormalizeAngle(static_cast<int>(arm1.GetAngle(true)));
+	int bStart = NormalizeAngle(static_cast<int>(arm2.GetAngle(true)));
+
+	int aEnd = NormalizeAngle(static_cast<int>(arm1.GetAngle(false)));
+	int bEnd = NormalizeAngle(static_cast<int>(arm2.GetAngle(false)));
+
+	RunFlood(aStart, bStart, aEnd, bEnd);
+
+	return RetrievePath(aEnd, bEnd, angle1, angle2);
+}
+
+int Simulation::NormalizeAngle(int angle)
+{
+	while (angle < 0) angle += 360;
+	while (angle >= 360) angle -= 360;
+
+	return angle;
 }

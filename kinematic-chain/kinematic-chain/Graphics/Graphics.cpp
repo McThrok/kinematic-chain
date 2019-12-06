@@ -89,6 +89,17 @@ void Graphics::RenderMainPanel() {
 		UpdateTexture();
 	}
 
+	if (ImGui::Button("Find path"))
+	{
+		vector<int> angle1;
+		vector<int> angle2;
+		simulation->Update();
+		if (simulation->FindPath(angle1, angle2))
+			for (int i = 0; i < angle1.size(); i++)
+				simulation->parametrizationTable.get()[angle1[i] * 360 + angle2[i]] = Vector4(1, 0, 0, 1);
+		UpdateTexture();
+	}
+
 	ImGui::Separator();
 
 	int idx = simulation->selectedIdx;
@@ -354,7 +365,7 @@ void Graphics::UpdateTexture()
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	deviceContext->Map(my_texture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	unsigned int* data = ((unsigned int*)mappedResource.pData);
-	Vector4* src = simulation->parametrizationTable;
+	Vector4* src = simulation->parametrizationTable.get();
 
 	for (int i = 0; i < 360; i++)
 	{

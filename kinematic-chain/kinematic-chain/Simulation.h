@@ -6,6 +6,8 @@
 #include <SimpleMath.h>
 #include <algorithm>
 #include <random>
+#include <queue>
+#include <memory>
 
 #include "Graphics/Vertex.h"
 
@@ -22,7 +24,7 @@ public:
 	float endAngle;
 	float endAngleAlt;
 	bool* useAltStart;
-	bool *useAltEnd;
+	bool* useAltEnd;
 
 	float GetAngle(bool start) { return start ? *useAltStart ? startAngleAlt : startAngle : *useAltEnd ? endAngleAlt : endAngle; }
 	Matrix GetWorldMatrix(bool start) { return Matrix::CreateScale(length, 1, 1) * Matrix::CreateRotationY(-XMConvertToRadians(GetAngle(start))); }
@@ -40,7 +42,10 @@ public:
 class Simulation
 {
 public:
-	Vector4* parametrizationTable;
+	unique_ptr<Vector4[]> parametrizationTable;
+	unique_ptr<int[]> ffTable;
+	int N;
+	Vector4 color;
 
 	int selectedIdx;
 	bool useAltStart;
@@ -60,10 +65,19 @@ public:
 	void Select(int x, int y);
 	void DeleteSelected();
 
+	bool FindPath(vector<int>& angle1, vector<int>& angle2);
+	void ClearFloodTable();
+	void RunFlood(int aStart, int bStart, int aEnd, int bEnd);
+	void FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB);
+	bool RetrievePath(int aEnd, int bEnd, vector<int>& angle1, vector<int>& angle2);
+	bool RetrievePathStep(int a, int b, int val, vector<int>& angle1, vector<int>& angle2);
+
 	mt19937 gen{ 0 };
 	vector<Obsticle> obsitcles;
 	void AddObsticle(Vector2 p1, Vector2 p2);
 	Vector4 GetRandomColor();
 	float GetRandomFloat(float min, float max);
+
+	int NormalizeAngle(int angle);
 };
 
