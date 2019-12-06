@@ -41,7 +41,7 @@ private:
 	void RenderVisualization();
 
 	void RenderParametrisation();
-	void RenderObsticles();
+	void RenderObstacles();
 	void RenderAxis();
 	void RenderArms();
 	void RenderSquare(Matrix worldMatrix, Vector4 color);

@@ -53,7 +53,7 @@ void Engine::HandleInput()
 		{
 			if (me.GetType() == MouseEvent::RPress)
 			{
-				simulation.Select(me.GetPosX() - gfx.windowWidth / 2, -me.GetPosY() + gfx.windowHeight / 2);
+				simulation.Obstacles.Select(me.GetPosX() - gfx.windowWidth / 2, -me.GetPosY() + gfx.windowHeight / 2);
 			}
 			if (me.GetType() == MouseEvent::LPress)
 			{
@@ -66,7 +66,7 @@ void Engine::HandleInput()
 				auto p1 = Vector2(x, -y) - ScreenOffest;
 				auto p2 = Vector2(me.GetPosX(), -me.GetPosY()) - ScreenOffest;
 
-				simulation.AddObsticle(p1, p2);
+				simulation.Obstacles.AddObstacle(p1, p2);
 			}
 		}
 		if (keyboard.KeyIsPressed(0x11))//lctrl

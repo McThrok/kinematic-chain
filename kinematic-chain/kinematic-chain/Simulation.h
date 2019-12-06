@@ -11,19 +11,11 @@
 
 #include "Graphics/Vertex.h"
 #include "Robot.h"
+#include "ObstacleCollection.h"
 
 using namespace std;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
-
-class Obsticle
-{
-public:
-	Vector2 position;
-	Vector2 size;
-	Vector4 color;
-	Matrix GetWorldMatrix() { return Matrix::CreateScale(size.x, 1, size.y) * Matrix::CreateTranslation(position.x, 0, position.y); }
-};
 
 class Simulation
 {
@@ -33,28 +25,17 @@ public:
 	int N;
 	Vector4 color;
 
-	int selectedIdx;
 	Robot robot;
+	ObstacleCollection Obstacles;
 
 	void Init();
 	void UpdateValues();
-
 
 	float paused;
 	float time;
 	float animationTime;
 	void Animate();
 	void UpdateAnimation(float dt);
-	float GetAngle(float animationProgress);
-
-
-	bool CheckSegment(Vector2 v1, Vector2 v2, Vector4& color);
-	bool SegmentIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2);
-	bool OnSegment(Vector2 p, Vector2 q, Vector2 r);
-	int CheckOrientation(Vector2 p, Vector2 q, Vector2 r);
-
-	void Select(int x, int y);
-	void DeleteSelected();
 
 	bool FindPath();
 	void ClearFloodTable();
@@ -62,12 +43,6 @@ public:
 	void FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB);
 	bool RetrievePath(int aEnd, int bEnd);
 	bool RetrievePathStep(int a, int b, int val, vector<pair<int, int>>& angle);
-
-	mt19937 gen{ 0 };
-	vector<Obsticle> obsitcles;
-	void AddObsticle(Vector2 p1, Vector2 p2);
-	Vector4 GetRandomColor();
-	float GetRandomFloat(float min, float max);
 
 	int NormalizeAngle(int angle);
 };

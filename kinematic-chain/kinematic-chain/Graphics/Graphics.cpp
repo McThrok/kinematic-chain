@@ -102,15 +102,15 @@ void Graphics::RenderMainPanel() {
 
 	ImGui::Separator();
 
-	int idx = simulation->selectedIdx;
+	int idx = simulation->Obstacles.selectedIdx;
 	if (idx != -1) {
-		Obstacle& o = simulation->obstacles[idx];
+		Obstacle& o = simulation->Obstacles.obstacles[idx];
 
 		ImGui::DragFloat2("position", &o.position.x, 1);
 		ImGui::DragFloat2("size", &o.size.x, 1);
 
 		if (ImGui::Button("Delete"))
-			simulation->DeleteSelected();
+			simulation->Obstacles.DeleteSelected();
 
 		ImGui::ColorPicker3("color", &o.color.x);
 	}
@@ -165,7 +165,7 @@ void Graphics::RenderAxis()
 
 void Graphics::RenderObstacles()
 {
-	for (auto& o : simulation->obstacles)
+	for (auto& o : simulation->Obstacles.obstacles)
 		RenderSquare(o.GetWorldMatrix(), o.color);
 }
 
