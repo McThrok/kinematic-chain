@@ -10,25 +10,11 @@
 #include <memory>
 
 #include "Graphics/Vertex.h"
+#include "Robot.h"
 
 using namespace std;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
-
-class Arm
-{
-public:
-	float length;
-	float startAngle;
-	float startAngleAlt;
-	float endAngle;
-	float endAngleAlt;
-	bool* useAltStart;
-	bool* useAltEnd;
-
-	float GetAngle(bool start) { return start ? *useAltStart ? startAngleAlt : startAngle : *useAltEnd ? endAngleAlt : endAngle; }
-	Matrix GetWorldMatrix(bool start) { return Matrix::CreateScale(length, 1, 1) * Matrix::CreateRotationY(-XMConvertToRadians(GetAngle(start))); }
-};
 
 class Obsticle
 {
@@ -48,15 +34,20 @@ public:
 	Vector4 color;
 
 	int selectedIdx;
-	bool useAltStart;
-	bool useAltEnd;
-	Arm arm1;
-	Arm arm2;
+	Robot robot;
 
 	void Init();
-	void Update();
+	void UpdateValues();
 
-	bool SetPosition(Vector2 position, bool start);
+
+	float paused;
+	float time;
+	float animationTime;
+	void Animate();
+	void UpdateAnimation(float dt);
+	float GetAngle(float animationProgress);
+
+
 	bool CheckSegment(Vector2 v1, Vector2 v2, Vector4& color);
 	bool SegmentIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2);
 	bool OnSegment(Vector2 p, Vector2 q, Vector2 r);
@@ -65,12 +56,12 @@ public:
 	void Select(int x, int y);
 	void DeleteSelected();
 
-	bool FindPath(vector<int>& angle1, vector<int>& angle2);
+	bool FindPath();
 	void ClearFloodTable();
 	void RunFlood(int aStart, int bStart, int aEnd, int bEnd);
 	void FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB);
-	bool RetrievePath(int aEnd, int bEnd, vector<int>& angle1, vector<int>& angle2);
-	bool RetrievePathStep(int a, int b, int val, vector<int>& angle1, vector<int>& angle2);
+	bool RetrievePath(int aEnd, int bEnd);
+	bool RetrievePathStep(int a, int b, int val, vector<pair<int, int>>& angle);
 
 	mt19937 gen{ 0 };
 	vector<Obsticle> obsitcles;

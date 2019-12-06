@@ -1,22 +1,15 @@
 #include "Simulation.h"
 
+
 void Simulation::Init()
 {
-	useAltStart = false;
-	useAltEnd = false;
+	robot.Init();
+	float paused = false;
+	float animationTime = 2;
+
 	selectedIdx = -1;
 	N = 360;
 	color = Vector4(1, 1, 1, 1);
-
-	arm1.length = 150;
-	arm2.length = 100;
-	arm1.useAltStart = &useAltStart;
-	arm2.useAltStart = &useAltStart;
-	arm1.useAltEnd = &useAltEnd;
-	arm2.useAltEnd = &useAltEnd;
-
-	SetPosition(Vector2(150, 100), true);
-	SetPosition(Vector2(100, 150), false);
 
 	parametrizationTable = make_unique<Vector4[]>(N * N);
 	ffTable = make_unique<int[]>(N * N);
@@ -74,70 +67,22 @@ float Simulation::GetRandomFloat(float min, float max)
 {
 	return  std::uniform_real_distribution<float>{min, max}(gen);
 }
-bool Simulation::SetPosition(Vector2 position, bool start)
+
+void UpdateAnimation(float dt)
 {
-	float l1 = arm1.length;
-	float l2 = arm2.length;
-	float px = position.x;
-	float py = position.y;
 
-	float tmp = -py * py * (l1 * l1 * l1 * l1 + (-l2 * l2 + px * px + py * py) * (-l2 * l2 + px * px + py * py) - 2 * l1 * l1 * (l2 * l2 + px * px + py * py));
-	if (tmp < 0)
-		return false;
-
-	float x = l1 * l1 * px - l2 * l2 * px + px * px * px + px * py * py;
-	float xDiv = 2 * (px * px + py * py);
-
-	float y = l1 * l1 * py * py - l2 * l2 * py * py + px * px * py * py + py * py * py * py;
-	float yDiv = 2 * py * (px * px + py * py);
-
-	Vector2 v1((x - sqrt(tmp)) / xDiv, (y + px * sqrt(tmp)) / yDiv);
-	Vector2 v2((x + sqrt(tmp)) / xDiv, (y - px * sqrt(tmp)) / yDiv);
-
-	Vector2 w1 = position - v1;
-	Vector2 w2 = position - v2;
-
-	float* angle1;
-	float* angle2;
-	float* angleAlt1;
-	float* angleAlt2;
-
-	if (start)
-	{
-		angle1 = &arm1.startAngle;
-		angle2 = &arm2.startAngle;
-		angleAlt1 = &arm1.startAngleAlt;
-		angleAlt2 = &arm2.startAngleAlt;
-	}
-	else
-	{
-		angle1 = &arm1.endAngle;
-		angle2 = &arm2.endAngle;
-		angleAlt1 = &arm1.endAngleAlt;
-		angleAlt2 = &arm2.endAngleAlt;
-	}
-
-	*angle1 = XMConvertToDegrees(XMScalarACos(Vector2(1, 0).Dot(v1) / v1.Length()));
-	*angle2 = XMConvertToDegrees(XMScalarACos(v1.Dot(w1) / v1.Length() / w1.Length()));
-	if (((Vector3)XMVector2Cross(Vector2(1, 0), v1)).x < 0) *angle1 *= -1;
-	if (((Vector3)XMVector2Cross(v1, w1)).x < 0) *angle2 *= -1;
-
-	*angleAlt1 = XMConvertToDegrees(XMScalarACos(Vector2(1, 0).Dot(v2) / v2.Length()));
-	*angleAlt2 = XMConvertToDegrees(XMScalarACos(v2.Dot(w2) / v2.Length() / w2.Length()));
-	if (((Vector3)XMVector2Cross(Vector2(1, 0), v2)).x < 0) *angleAlt1 *= -1;
-	if (((Vector3)XMVector2Cross(v2, w2)).x < 0) *angleAlt2 *= -1;
 }
 
-void Simulation::Update()
+void Simulation::UpdateValues()
 {
 	Vector2 v1(0, 0);
 
 	for (int i = 0; i < N; i++)
 	{
-		Matrix t1 = Matrix::CreateTranslation(Vector3(arm1.length, 0, 0));
+		Matrix t1 = Matrix::CreateTranslation(Vector3(robot.arm1.length, 0, 0));
 		Matrix r1 = Matrix::CreateRotationY(XMConvertToRadians(-i));
 
-		Vector3 w2 = XMVector3TransformCoord(Vector3(arm1.length, 0, 0), r1);
+		Vector3 w2 = XMVector3TransformCoord(Vector3(robot.arm1.length, 0, 0), r1);
 		Vector2 v2(w2.x, w2.z);
 
 		for (int j = 0; j < N; j++)
@@ -145,7 +90,7 @@ void Simulation::Update()
 			Matrix r2 = Matrix::CreateRotationY(XMConvertToRadians(-j));
 			Matrix m = r2 * t1 * r1;
 
-			Vector3 w3 = XMVector3TransformCoord(Vector3(arm2.length, 0, 0), m);
+			Vector3 w3 = XMVector3TransformCoord(Vector3(robot.arm2.length, 0, 0), m);
 			Vector2 v3(w3.x, w3.z);
 
 
@@ -257,7 +202,7 @@ void Simulation::FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB
 	int* ff = ffTable.get();
 	int idx = a * N + b;
 
-	if (ff[idx] != -1 && ff[idx] > val+1)
+	if (ff[idx] != -1 && ff[idx] > val + 1)
 	{
 		ff[idx] = val + 1;
 		qA.push(a);
@@ -265,7 +210,7 @@ void Simulation::FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB
 	}
 
 }
-bool Simulation::RetrievePathStep(int a, int b, int val, vector<int>& angle1, vector<int>& angle2)
+bool Simulation::RetrievePathStep(int a, int b, int val, vector<pair<int,int>>& angle)
 {
 	a = NormalizeAngle(a);
 	b = NormalizeAngle(b);
@@ -274,21 +219,35 @@ bool Simulation::RetrievePathStep(int a, int b, int val, vector<int>& angle1, ve
 
 	if (ff[idx] != -1 && ff[idx] < val)
 	{
-		angle1.push_back(a);
-		angle2.push_back(b);
+		angle.push_back(make_pair(a,b));
 		return true;
 	}
 	return false;
 }
-bool Simulation::RetrievePath(int aEnd, int bEnd, vector<int>& angle1, vector<int>& angle2)
+
+void Simulation::Animate()
 {
-	angle1.clear();
-	angle2.clear();
+	time = 0;
+	paused = true;
+}
+
+void Simulation::UpdateAnimation(float dt)
+{
+	time += dt;
+}
+
+float Simulation::GetAngle(float animationProgress)
+{
+	return 0;
+}
+
+bool Simulation::RetrievePath(int aEnd, int bEnd)
+{
+	robot.angle.clear();
 
 	int a = aEnd;
 	int b = bEnd;
-	angle1.push_back(a);
-	angle2.push_back(b);
+	robot.angle.push_back(make_pair(a, b));
 
 	int* ff = ffTable.get();
 
@@ -299,10 +258,10 @@ bool Simulation::RetrievePath(int aEnd, int bEnd, vector<int>& angle1, vector<in
 		if (val == 0)
 			return true;
 
-		if (RetrievePathStep(a + 1, b, val, angle1, angle2)) a += 1;
-		else if (RetrievePathStep(a - 1, b, val, angle1, angle2)) a -= 1;
-		else if (RetrievePathStep(a, b + 1, val, angle1, angle2)) b += 1;
-		else if (RetrievePathStep(a, b - 1, val, angle1, angle2)) b -= 1;
+		if (RetrievePathStep(a + 1, b, val, robot.angle)) a += 1;
+		else if (RetrievePathStep(a - 1, b, val, robot.angle)) a -= 1;
+		else if (RetrievePathStep(a, b + 1, val, robot.angle)) b += 1;
+		else if (RetrievePathStep(a, b - 1, val, robot.angle)) b -= 1;
 		else return false;
 
 		a = NormalizeAngle(a);
@@ -312,20 +271,20 @@ bool Simulation::RetrievePath(int aEnd, int bEnd, vector<int>& angle1, vector<in
 	return true;
 
 }
-bool Simulation::FindPath(vector<int>& angle1, vector<int>& angle2)
+bool Simulation::FindPath()
 {
-	Update();
+	UpdateValues();
 	ClearFloodTable();
 
-	int aStart = NormalizeAngle(static_cast<int>(arm1.GetAngle(true)));
-	int bStart = NormalizeAngle(static_cast<int>(arm2.GetAngle(true)));
+	int aStart = NormalizeAngle(static_cast<int>(robot.arm1.GetAngle(true)));
+	int bStart = NormalizeAngle(static_cast<int>(robot.arm2.GetAngle(true)));
 
-	int aEnd = NormalizeAngle(static_cast<int>(arm1.GetAngle(false)));
-	int bEnd = NormalizeAngle(static_cast<int>(arm2.GetAngle(false)));
+	int aEnd = NormalizeAngle(static_cast<int>(robot.arm1.GetAngle(false)));
+	int bEnd = NormalizeAngle(static_cast<int>(robot.arm2.GetAngle(false)));
 
 	RunFlood(aStart, bStart, aEnd, bEnd);
 
-	return RetrievePath(aEnd, bEnd, angle1, angle2);
+	return RetrievePath(aEnd, bEnd);
 }
 
 int Simulation::NormalizeAngle(int angle)

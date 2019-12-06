@@ -65,27 +65,27 @@ void Graphics::RenderMainPanel() {
 		return;
 	}
 
-	ImGui::Text("Arm 1");
-	ImGui::DragFloat("length##1", &simulation->arm1.length, 1);
-	ImGui::DragFloat("start angle##start1", &simulation->arm1.startAngle, 1);
-	ImGui::DragFloat("start angle alt##startAlt1", &simulation->arm1.startAngleAlt, 1);
-	ImGui::DragFloat("end angle##end1", &simulation->arm1.endAngle, 1);
-	ImGui::DragFloat("end angle alt##endAlt1", &simulation->arm1.endAngleAlt, 1);
+	//ImGui::Text("Arm 1");
+	//ImGui::DragFloat("length##1", &simulation->arm1.length, 1);
+	//ImGui::DragFloat("start angle##start1", &simulation->arm1.startAngle, 1);
+	//ImGui::DragFloat("start angle alt##startAlt1", &simulation->arm1.startAngleAlt, 1);
+	//ImGui::DragFloat("end angle##end1", &simulation->arm1.endAngle, 1);
+	//ImGui::DragFloat("end angle alt##endAlt1", &simulation->arm1.endAngleAlt, 1);
 
-	ImGui::Text("Arm 2");
-	ImGui::DragFloat("length##2", &simulation->arm2.length, 1);
-	ImGui::DragFloat("start angle##start2", &simulation->arm2.startAngle, 1);
-	ImGui::DragFloat("start angle alt##startAlt2", &simulation->arm2.startAngleAlt, 1);
-	ImGui::DragFloat("end angle##end2", &simulation->arm2.endAngle, 1);
-	ImGui::DragFloat("end angle alt##endAlt2", &simulation->arm2.endAngleAlt, 1);
+	//ImGui::Text("Arm 2");
+	//ImGui::DragFloat("length##2", &simulation->arm2.length, 1);
+	//ImGui::DragFloat("start angle##start2", &simulation->arm2.startAngle, 1);
+	//ImGui::DragFloat("start angle alt##startAlt2", &simulation->arm2.startAngleAlt, 1);
+	//ImGui::DragFloat("end angle##end2", &simulation->arm2.endAngle, 1);
+	//ImGui::DragFloat("end angle alt##endAlt2", &simulation->arm2.endAngleAlt, 1);
 
-	ImGui::Separator();
-	ImGui::Checkbox("use alt start", &simulation->useAltStart);
-	ImGui::Checkbox("use alt end", &simulation->useAltEnd);
+	//ImGui::Separator();
+	//ImGui::Checkbox("use alt start", &simulation->useAltStart);
+	//ImGui::Checkbox("use alt end", &simulation->useAltEnd);
 
 	if (ImGui::Button("Update scene"))
 	{
-		simulation->Update();
+		simulation->UpdateValues();
 		UpdateTexture();
 	}
 
@@ -93,8 +93,8 @@ void Graphics::RenderMainPanel() {
 	{
 		vector<int> angle1;
 		vector<int> angle2;
-		simulation->Update();
-		if (simulation->FindPath(angle1, angle2))
+		simulation->UpdateValues();
+		if (simulation->FindPath())
 			for (int i = 0; i < angle1.size(); i++)
 				simulation->parametrizationTable.get()[angle1[i] * 360 + angle2[i]] = Vector4(1, 0, 0, 1);
 		UpdateTexture();
@@ -131,8 +131,7 @@ void Graphics::RenderVisualization()
 
 	RenderAxis();
 	RenderObsticles();
-	RenderArms(true, Vector4(1, 1, 0, 1));
-	RenderArms(false, Vector4(1, 0, 1, 1));
+	RenderArms();
 
 	this->deviceContext->VSSetShader(texture_vs.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(texture_ps.GetShader(), NULL, 0);
@@ -144,15 +143,15 @@ void Graphics::RenderVisualization()
 	RenderParametrisation();
 }
 
-void Graphics::RenderArms(bool start, Vector4 color)
+void Graphics::RenderArms()
 {
-	Matrix m1 = simulation->arm1.GetWorldMatrix(start);
-	RenderSquare(m1, color);
+	RobotState start = simulation->robot.GetState(0);
+	RenderSquare(start.armMatrix1, Vector4(1, 1, 0, 1));
+	RenderSquare(start.armMatrix2, Vector4(1, 1, 0, 1));
 
-	Matrix t = Matrix::CreateTranslation(Vector3(simulation->arm1.length, 0, 0));
-	Matrix r = Matrix::CreateRotationY(XMConvertToRadians(-simulation->arm1.GetAngle(start)));
-	Matrix m2 = simulation->arm2.GetWorldMatrix(start);
-	RenderSquare(m2 * t * r, color);
+	RobotState end = simulation->robot.GetState(1);
+	RenderSquare(end.armMatrix1, Vector4(1, 0, 1, 1));
+	RenderSquare(end.armMatrix2, Vector4(1, 0, 1, 1));
 }
 void Graphics::RenderAxis()
 {
