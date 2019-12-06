@@ -65,23 +65,23 @@ void Graphics::RenderMainPanel() {
 		return;
 	}
 
-	//ImGui::Text("Arm 1");
-	//ImGui::DragFloat("length##1", &simulation->arm1.length, 1);
-	//ImGui::DragFloat("start angle##start1", &simulation->arm1.startAngle, 1);
-	//ImGui::DragFloat("start angle alt##startAlt1", &simulation->arm1.startAngleAlt, 1);
-	//ImGui::DragFloat("end angle##end1", &simulation->arm1.endAngle, 1);
-	//ImGui::DragFloat("end angle alt##endAlt1", &simulation->arm1.endAngleAlt, 1);
+	ImGui::Text("Arm 1");
+	ImGui::DragFloat("length##1", &simulation->robot.arm1.length, 1);
+	ImGui::DragFloat("start angle##start1", &simulation->robot.arm1.startAngle, 1);
+	ImGui::DragFloat("start angle alt##startAlt1", &simulation->robot.arm1.startAngleAlt, 1);
+	ImGui::DragFloat("end angle##end1", &simulation->robot.arm1.endAngle, 1);
+	ImGui::DragFloat("end angle alt##endAlt1", &simulation->robot.arm1.endAngleAlt, 1);
 
-	//ImGui::Text("Arm 2");
-	//ImGui::DragFloat("length##2", &simulation->arm2.length, 1);
-	//ImGui::DragFloat("start angle##start2", &simulation->arm2.startAngle, 1);
-	//ImGui::DragFloat("start angle alt##startAlt2", &simulation->arm2.startAngleAlt, 1);
-	//ImGui::DragFloat("end angle##end2", &simulation->arm2.endAngle, 1);
-	//ImGui::DragFloat("end angle alt##endAlt2", &simulation->arm2.endAngleAlt, 1);
+	ImGui::Text("Arm 2");
+	ImGui::DragFloat("length##2", &simulation->robot.arm2.length, 1);
+	ImGui::DragFloat("start angle##start2", &simulation->robot.arm2.startAngle, 1);
+	ImGui::DragFloat("start angle alt##startAlt2", &simulation->robot.arm2.startAngleAlt, 1);
+	ImGui::DragFloat("end angle##end2", &simulation->robot.arm2.endAngle, 1);
+	ImGui::DragFloat("end angle alt##endAlt2", &simulation->robot.arm2.endAngleAlt, 1);
 
-	//ImGui::Separator();
-	//ImGui::Checkbox("use alt start", &simulation->useAltStart);
-	//ImGui::Checkbox("use alt end", &simulation->useAltEnd);
+	ImGui::Separator();
+	ImGui::Checkbox("use alt start", &simulation->robot.useAltStart);
+	ImGui::Checkbox("use alt end", &simulation->robot.useAltEnd);
 
 	if (ImGui::Button("Update scene"))
 	{

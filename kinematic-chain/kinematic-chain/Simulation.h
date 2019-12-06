@@ -29,7 +29,7 @@ public:
 	ObstacleCollection Obstacles;
 
 	void Init();
-	void UpdateValues();
+	void UpdateParametrization();
 
 	float paused;
 	float time;

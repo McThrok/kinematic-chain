@@ -15,13 +15,7 @@ void Simulation::Init()
 	parametrizationTable = make_unique<Vector4[]>(N * N);
 	ffTable = make_unique<int[]>(N * N);
 }
-
-void UpdateAnimation(float dt)
-{
-
-}
-
-void Simulation::UpdateValues()
+void Simulation::UpdateParametrization()
 {
 	Vector2 v1(0, 0);
 
@@ -111,7 +105,7 @@ void Simulation::FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB
 	}
 
 }
-bool Simulation::RetrievePathStep(int a, int b, int val, vector<pair<int,int>>& angle)
+bool Simulation::RetrievePathStep(int a, int b, int val, vector<pair<int, int>>& angle)
 {
 	a = NormalizeAngle(a);
 	b = NormalizeAngle(b);
@@ -120,22 +114,11 @@ bool Simulation::RetrievePathStep(int a, int b, int val, vector<pair<int,int>>& 
 
 	if (ff[idx] != -1 && ff[idx] < val)
 	{
-		angle.push_back(make_pair(a,b));
+		angle.push_back(make_pair(a, b));
 		return true;
 	}
 	return false;
 }
-
-void Simulation::Animate()
-{
-	time = 0;
-	paused = true;
-}
-void Simulation::UpdateAnimation(float dt)
-{
-	time += dt;
-}
-
 bool Simulation::RetrievePath(int aEnd, int bEnd)
 {
 	robot.angle.clear();
@@ -168,7 +151,7 @@ bool Simulation::RetrievePath(int aEnd, int bEnd)
 }
 bool Simulation::FindPath()
 {
-	UpdateValues();
+	UpdateParametrization();
 	ClearFloodTable();
 
 	int aStart = NormalizeAngle(static_cast<int>(robot.arm1.GetAngle(true)));
@@ -180,6 +163,22 @@ bool Simulation::FindPath()
 	RunFlood(aStart, bStart, aEnd, bEnd);
 
 	return RetrievePath(aEnd, bEnd);
+}
+
+void Simulation::Animate()
+{
+	time = 0;
+	paused = true;
+}
+void Simulation::UpdateAnimation(float dt)
+{
+	if (time > animationTime)
+		paused = true;
+
+	if (paused)
+		return;
+
+	time += dt;
 }
 
 int Simulation::NormalizeAngle(int angle)
