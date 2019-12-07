@@ -43,6 +43,8 @@ public:
 class Robot
 {
 public:
+	bool properAnglesStart;
+	bool properAnglesEnd;
 	Arm arm1;
 	Arm arm2;
 
@@ -55,7 +57,7 @@ public:
 	RobotState GetState(float animationProgress);
 	float InterpolateAngle(float animationProgress, bool firstArm);
 	float NormalizeAngle(float angle);
-	bool SetPosition(Vector2 position, bool start);
+	void SetPosition(Vector2 position, bool start);
 
 };
 

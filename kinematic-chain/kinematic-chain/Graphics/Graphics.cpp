@@ -91,9 +91,14 @@ void Graphics::RenderMainPanel() {
 
 	if (ImGui::Button("Find path"))
 	{
-		simulation->UpdateParametrization();
 		simulation->FindPath();
 		UpdateTexture(true);
+	}
+
+	ImGui::SliderFloat("Animation time", &simulation->animationTime, 2, 10);
+	if (ImGui::Button("Animate"))
+	{
+		simulation->Animate();
 	}
 
 	ImGui::Separator();
@@ -125,9 +130,10 @@ void Graphics::RenderVisualization()
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->cbColoredObject.GetAddressOf());
 	this->deviceContext->PSSetConstantBuffers(0, 1, this->cbColoredObject.GetAddressOf());
 
-	RenderAxis();
 	RenderObstacles();
+	RenderAxis();
 	RenderArms();
+	RenderAnimation();
 
 	this->deviceContext->VSSetShader(texture_vs.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(texture_ps.GetShader(), NULL, 0);
@@ -139,15 +145,34 @@ void Graphics::RenderVisualization()
 	RenderParametrisation();
 }
 
+void Graphics::RenderAnimation()
+{
+	if (!simulation->paused)
+	{
+		RobotState rs = simulation->robot.GetState(simulation->time/simulation->animationTime);
+		if (!rs.isEmpty)
+		{
+			RenderSquare(rs.armMatrix1, Vector4(1, 1, 0, 1));
+			RenderSquare(rs.armMatrix2, Vector4(1, 1, 0, 1));
+		}
+	}
+}
+
 void Graphics::RenderArms()
 {
 	RobotState start = simulation->robot.GetState(0);
-	RenderSquare(start.armMatrix1, Vector4(1, 1, 0, 1));
-	RenderSquare(start.armMatrix2, Vector4(1, 1, 0, 1));
+	if (!start.isEmpty)
+	{
+		RenderSquare(start.armMatrix1, Vector4(1, 1, 0, 1));
+		RenderSquare(start.armMatrix2, Vector4(1, 1, 0, 1));
+	}
 
 	RobotState end = simulation->robot.GetState(1);
-	RenderSquare(end.armMatrix1, Vector4(1, 0, 1, 1));
-	RenderSquare(end.armMatrix2, Vector4(1, 0, 1, 1));
+	if (!end.isEmpty)
+	{
+		RenderSquare(end.armMatrix1, Vector4(1, 0, 1, 1));
+		RenderSquare(end.armMatrix2, Vector4(1, 0, 1, 1));
+	}
 }
 void Graphics::RenderAxis()
 {

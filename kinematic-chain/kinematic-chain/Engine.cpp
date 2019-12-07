@@ -26,6 +26,8 @@ void Engine::Update()
 	float dt = timer.GetMilisecondsElapsed();
 	timer.Restart();
 
+	gfx.simulation->UpdateAnimation(dt);
+
 	HandleInput();
 }
 void Engine::HandleInput()

@@ -24,15 +24,32 @@ RobotState Robot::GetState(float animationProgress)
 
 	RobotState rs;
 
+
 	if (animationProgress == 0)
 	{
-		rs.armAngle1 = arm1.GetAngle(true);
-		rs.armAngle2 = arm2.GetAngle(true);
+		if (properAnglesStart)
+		{
+			rs.armAngle1 = arm1.GetAngle(true);
+			rs.armAngle2 = arm2.GetAngle(true);
+		}
+		else
+		{
+			rs.isEmpty = true;
+			return rs;
+		}
 	}
 	else if (animationProgress == 1)
 	{
-		rs.armAngle1 = arm1.GetAngle(false);
-		rs.armAngle2 = arm2.GetAngle(false);
+		if (properAnglesEnd)
+		{
+			rs.armAngle1 = arm1.GetAngle(false);
+			rs.armAngle2 = arm2.GetAngle(false);
+		}
+		else
+		{
+			rs.isEmpty = true;
+			return rs;
+		}
 	}
 	else
 	{
@@ -59,33 +76,19 @@ RobotState Robot::GetState(float animationProgress)
 	return rs;
 }
 
-bool Robot::SetPosition(Vector2 position, bool start)
+void Robot::SetPosition(Vector2 position, bool start)
 {
 	float l1 = arm1.length;
 	float l2 = arm2.length;
 	float px = position.x;
 	float py = position.y;
-
-	float tmp = -py * py * (l1 * l1 * l1 * l1 + (-l2 * l2 + px * px + py * py) * (-l2 * l2 + px * px + py * py) - 2 * l1 * l1 * (l2 * l2 + px * px + py * py));
-	if (tmp < 0)
-		return false;
-
-	float x = l1 * l1 * px - l2 * l2 * px + px * px * px + px * py * py;
-	float xDiv = 2 * (px * px + py * py);
-
-	float y = l1 * l1 * py * py - l2 * l2 * py * py + px * px * py * py + py * py * py * py;
-	float yDiv = 2 * py * (px * px + py * py);
-
-	Vector2 v1((x - sqrt(tmp)) / xDiv, (y + px * sqrt(tmp)) / yDiv);
-	Vector2 v2((x + sqrt(tmp)) / xDiv, (y - px * sqrt(tmp)) / yDiv);
-
-	Vector2 w1 = position - v1;
-	Vector2 w2 = position - v2;
+	float l = sqrtf(px * px + py * py);
 
 	float* angle1;
 	float* angle2;
 	float* angleAlt1;
 	float* angleAlt2;
+	bool* properAngles;
 
 	if (start)
 	{
@@ -93,6 +96,7 @@ bool Robot::SetPosition(Vector2 position, bool start)
 		angle2 = &arm2.startAngle;
 		angleAlt1 = &arm1.startAngleAlt;
 		angleAlt2 = &arm2.startAngleAlt;
+		properAngles = &properAnglesStart;
 	}
 	else
 	{
@@ -100,26 +104,37 @@ bool Robot::SetPosition(Vector2 position, bool start)
 		angle2 = &arm2.endAngle;
 		angleAlt1 = &arm1.endAngleAlt;
 		angleAlt2 = &arm2.endAngleAlt;
+		properAngles = &properAnglesEnd;
 	}
 
-	*angle1 = XMConvertToDegrees(XMScalarACos(Vector2(1, 0).Dot(v1) / v1.Length()));
-	*angle2 = XMConvertToDegrees(XMScalarACos(v1.Dot(w1) / v1.Length() / w1.Length()));
-	if (((Vector3)XMVector2Cross(Vector2(1, 0), v1)).x < 0) *angle1 *= -1;
-	if (((Vector3)XMVector2Cross(v1, w1)).x < 0) *angle2 *= -1;
+	float beta = atan2f(py, px);
+	float delta = acosf((l1 * l1 + l * l - l2 * l2) / (2 * l1 * l));
+	float gamma = acosf((l1 * l1 + l2 * l2 - l * l) / (2 * l1 * l2));
 
-	*angleAlt1 = XMConvertToDegrees(XMScalarACos(Vector2(1, 0).Dot(v2) / v2.Length()));
-	*angleAlt2 = XMConvertToDegrees(XMScalarACos(v2.Dot(w2) / v2.Length() / w2.Length()));
-	if (((Vector3)XMVector2Cross(Vector2(1, 0), v2)).x < 0) *angleAlt1 *= -1;
-	if (((Vector3)XMVector2Cross(v2, w2)).x < 0) *angleAlt2 *= -1;
+	if (isnan(beta) || isnan(delta) || isnan(gamma))
+	{
+		*properAngles = false;
+		return;
+	}
+	*properAngles = true;
+
+	*angle1 = XMConvertToDegrees(beta + delta);
+	*angle2 = XMConvertToDegrees(XM_PI + gamma);
+
+	*angleAlt1 = XMConvertToDegrees(beta - delta);
+	*angleAlt2 = XMConvertToDegrees(XM_PI - gamma);
 }
 
 float Robot::InterpolateAngle(float animationProgress, bool firstArm)
 {
-	int max = angle.size() - 1;
-	int idx = static_cast<int>(floorf(animationProgress * max));
-	float localProgress = (animationProgress * max - idx) / (1.0f / max);
+	int idx = static_cast<int>(floorf(animationProgress * angle.size()));
+	float localProgress = (animationProgress * angle.size() - idx);
 
 	float start = NormalizeAngle(firstArm ? angle[idx].first : angle[idx].second);
+
+	if (idx == angle.size() - 1)
+		return start;
+
 	float end = NormalizeAngle(firstArm ? angle[idx + 1].first : angle[idx + 1].second);
 
 	if (abs(end - start) > 180)

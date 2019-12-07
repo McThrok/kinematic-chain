@@ -6,8 +6,8 @@ void Simulation::Init()
 	robot.Init();
 	Obstacles.Init();
 
-	float paused = false;
-	float animationTime = 2;
+	paused = true;
+	animationTime = 2;
 
 	N = 360;
 	color = Vector4(0, 0, 0, 1);
@@ -17,6 +17,8 @@ void Simulation::Init()
 
 	parametrizationTableTmp = make_unique<Vector4[]>(N * N);
 	ffTableTmp = make_unique<int[]>(N * N);
+
+	UpdateParametrization();
 }
 void Simulation::UpdateParametrization()
 {
@@ -129,7 +131,7 @@ bool Simulation::RetrievePath(int aEnd, int bEnd)
 		int val = fft[a * N + b];
 
 		if (val == 0)
-			return true;
+			break;
 
 		if (RetrievePathStep(a + 1, b, val, robot.angle)) a += 1;
 		else if (RetrievePathStep(a - 1, b, val, robot.angle)) a -= 1;
@@ -140,23 +142,33 @@ bool Simulation::RetrievePath(int aEnd, int bEnd)
 		a = NormalizeAngle(a);
 		b = NormalizeAngle(b);
 	}
+
+	reverse(robot.angle.begin(), robot.angle.end());
+
 	return true;
 
 }
 void Simulation::FindPath()
 {
-	UpdateParametrization();
 	ClearFloodTable();
 
-	int aStart = NormalizeAngle(static_cast<int>(robot.arm1.GetAngle(true)));
-	int bStart = NormalizeAngle(static_cast<int>(robot.arm2.GetAngle(true)));
+	if (!robot.properAnglesStart || !robot.properAnglesEnd)
+	{
+		robot.angle.clear();
+	}
+	else
+	{
+		int aStart = NormalizeAngle(static_cast<int>(robot.arm1.GetAngle(true)));
+		int bStart = NormalizeAngle(static_cast<int>(robot.arm2.GetAngle(true)));
 
-	int aEnd = NormalizeAngle(static_cast<int>(robot.arm1.GetAngle(false)));
-	int bEnd = NormalizeAngle(static_cast<int>(robot.arm2.GetAngle(false)));
+		int aEnd = NormalizeAngle(static_cast<int>(robot.arm1.GetAngle(false)));
+		int bEnd = NormalizeAngle(static_cast<int>(robot.arm2.GetAngle(false)));
 
-	RunFlood(aStart, bStart, aEnd, bEnd);
+		RunFlood(aStart, bStart, aEnd, bEnd);
 
-	RetrievePath(aEnd, bEnd);
+		RetrievePath(aEnd, bEnd);
+	}
+
 	DrawFlood();
 }
 
@@ -191,7 +203,7 @@ void Simulation::DrawFlood()
 void Simulation::Animate()
 {
 	time = 0;
-	paused = true;
+	paused = false;
 }
 void Simulation::UpdateAnimation(float dt)
 {
@@ -201,7 +213,7 @@ void Simulation::UpdateAnimation(float dt)
 	if (paused)
 		return;
 
-	time += dt;
+	time += dt/1000;
 }
 
 int Simulation::NormalizeAngle(int angle)
