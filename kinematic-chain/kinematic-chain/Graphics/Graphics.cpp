@@ -85,19 +85,15 @@ void Graphics::RenderMainPanel() {
 
 	if (ImGui::Button("Update scene"))
 	{
-		simulation->UpdateValues();
-		UpdateTexture();
+		simulation->UpdateParametrization();
+		UpdateTexture(false);
 	}
 
 	if (ImGui::Button("Find path"))
 	{
-		vector<int> angle1;
-		vector<int> angle2;
-		simulation->UpdateValues();
-		if (simulation->FindPath())
-			for (int i = 0; i < angle1.size(); i++)
-				simulation->parametrizationTable.get()[angle1[i] * 360 + angle2[i]] = Vector4(1, 0, 0, 1);
-		UpdateTexture();
+		simulation->UpdateParametrization();
+		simulation->FindPath();
+		UpdateTexture(true);
 	}
 
 	ImGui::Separator();
@@ -188,6 +184,7 @@ void Graphics::RenderParametrisation()
 	UINT offset = 0;
 
 	cbObject.data.worldMatrix = Matrix::CreateScale(360) * Matrix::CreateTranslation(-930, 0, -470);
+	cbObject.data.worldMatrix = Matrix::CreateScale(360) * Matrix::CreateTranslation(-630, 0, -370);
 	cbObject.data.wvpMatrix = cbObject.data.worldMatrix * camera.GetViewMatrix() * camera.GetProjectionMatrix();
 
 	cbObject.ApplyChanges();
@@ -359,18 +356,19 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 	return true;
 }
 
-void Graphics::UpdateTexture()
+void Graphics::UpdateTexture(bool withPath)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	deviceContext->Map(my_texture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	unsigned int* data = ((unsigned int*)mappedResource.pData);
-	Vector4* src = simulation->parametrizationTable.get();
+	Vector4* src = withPath ? simulation->parametrizationTableTmp.get() : simulation->parametrizationTable.get();
 
 	for (int i = 0; i < 360; i++)
 	{
 		for (int j = 0; j < 360; j++)
 		{
-			Vector4 color = src[j + i * 360];
+
+			Vector4 color = src[j * simulation->N + i];
 			unsigned int a = 255U * color.w;
 			unsigned int r = 255U * color.x;
 			unsigned int g = 255U * color.y;

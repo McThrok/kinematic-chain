@@ -46,7 +46,7 @@ private:
 	void RenderArms();
 	void RenderSquare(Matrix worldMatrix, Vector4 color);
 
-	void UpdateTexture();
+	void UpdateTexture(bool withPath);
 
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;

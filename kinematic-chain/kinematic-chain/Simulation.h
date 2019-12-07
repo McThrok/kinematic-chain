@@ -22,6 +22,9 @@ class Simulation
 public:
 	unique_ptr<Vector4[]> parametrizationTable;
 	unique_ptr<int[]> ffTable;
+
+	unique_ptr<Vector4[]> parametrizationTableTmp;
+	unique_ptr<int[]> ffTableTmp;
 	int N;
 	Vector4 color;
 
@@ -37,12 +40,13 @@ public:
 	void Animate();
 	void UpdateAnimation(float dt);
 
-	bool FindPath();
+	void FindPath();
 	void ClearFloodTable();
 	void RunFlood(int aStart, int bStart, int aEnd, int bEnd);
 	void FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB);
 	bool RetrievePath(int aEnd, int bEnd);
 	bool RetrievePathStep(int a, int b, int val, vector<pair<int, int>>& angle);
+	void DrawFlood();
 
 	int NormalizeAngle(int angle);
 };

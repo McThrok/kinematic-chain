@@ -10,10 +10,13 @@ void Simulation::Init()
 	float animationTime = 2;
 
 	N = 360;
-	color = Vector4(1, 1, 1, 1);
+	color = Vector4(0, 0, 0, 1);
 
 	parametrizationTable = make_unique<Vector4[]>(N * N);
 	ffTable = make_unique<int[]>(N * N);
+
+	parametrizationTableTmp = make_unique<Vector4[]>(N * N);
+	ffTableTmp = make_unique<int[]>(N * N);
 }
 void Simulation::UpdateParametrization()
 {
@@ -41,6 +44,8 @@ void Simulation::UpdateParametrization()
 				Obstacles.CheckSegment(v2, v3, color);
 
 			parametrizationTable.get()[i * N + j] = color;
+			ffTable.get()[i * N + j] = color == this->color ? 1000000 : -1;
+
 		}
 	}
 }
@@ -48,31 +53,21 @@ void Simulation::UpdateParametrization()
 void Simulation::ClearFloodTable()
 {
 	int* ff = ffTable.get();
+	int* fft = ffTableTmp.get();
 
-	for (int i = 0; i < N; i++)
-		for (int j = 0; j < N; j++)
-		{
-			int idx = i * N + j;
-			if (parametrizationTable.get()[idx] != this->color)
-				ff[idx] = -1;//blocked
-			else
-				ff[idx] = 1000000;
-		}
+	for (int i = 0; i < N * N; i++)
+		fft[i] = ff[i];
 }
 void Simulation::RunFlood(int aStart, int bStart, int aEnd, int bEnd)
 {
-	//aStart = 10;
-	//bStart = 10;
-	//aEnd = 12;
-	//bEnd = 10;
-	int* ff = ffTable.get();
+	int* fft = ffTableTmp.get();
 
 	queue<int> qA;
 	queue<int> qB;
 
 	qA.push(aStart);
 	qB.push(bStart);
-	ff[aStart * N + bStart] = 0;
+	fft[aStart * N + bStart] = 0;
 
 	while (!qA.empty())
 	{
@@ -81,7 +76,7 @@ void Simulation::RunFlood(int aStart, int bStart, int aEnd, int bEnd)
 		if (a == aEnd && b == bEnd)
 			break;
 
-		int val = ff[a * N + b];
+		int val = fft[a * N + b];
 
 		FloodStep(a + 1, b, val, qA, qB);
 		FloodStep(a - 1, b, val, qA, qB);
@@ -94,12 +89,12 @@ void Simulation::FloodStep(int a, int b, int val, queue<int>& qA, queue<int>& qB
 {
 	a = NormalizeAngle(a);
 	b = NormalizeAngle(b);
-	int* ff = ffTable.get();
+	int* fft = ffTableTmp.get();
 	int idx = a * N + b;
 
-	if (ff[idx] != -1 && ff[idx] > val + 1)
+	if (fft[idx] != -1 && fft[idx] > val + 1)
 	{
-		ff[idx] = val + 1;
+		fft[idx] = val + 1;
 		qA.push(a);
 		qB.push(b);
 	}
@@ -109,10 +104,10 @@ bool Simulation::RetrievePathStep(int a, int b, int val, vector<pair<int, int>>&
 {
 	a = NormalizeAngle(a);
 	b = NormalizeAngle(b);
-	int* ff = ffTable.get();
+	int* fft = ffTableTmp.get();
 	int idx = a * N + b;
 
-	if (ff[idx] != -1 && ff[idx] < val)
+	if (fft[idx] != -1 && fft[idx] < val)
 	{
 		angle.push_back(make_pair(a, b));
 		return true;
@@ -127,11 +122,11 @@ bool Simulation::RetrievePath(int aEnd, int bEnd)
 	int b = bEnd;
 	robot.angle.push_back(make_pair(a, b));
 
-	int* ff = ffTable.get();
+	int* fft = ffTableTmp.get();
 
 	while (true)
 	{
-		int val = ff[a * N + b];
+		int val = fft[a * N + b];
 
 		if (val == 0)
 			return true;
@@ -140,16 +135,15 @@ bool Simulation::RetrievePath(int aEnd, int bEnd)
 		else if (RetrievePathStep(a - 1, b, val, robot.angle)) a -= 1;
 		else if (RetrievePathStep(a, b + 1, val, robot.angle)) b += 1;
 		else if (RetrievePathStep(a, b - 1, val, robot.angle)) b -= 1;
-		else return false;
+		else { robot.angle.clear(); return false; }
 
 		a = NormalizeAngle(a);
 		b = NormalizeAngle(b);
 	}
-
 	return true;
 
 }
-bool Simulation::FindPath()
+void Simulation::FindPath()
 {
 	UpdateParametrization();
 	ClearFloodTable();
@@ -162,7 +156,36 @@ bool Simulation::FindPath()
 
 	RunFlood(aStart, bStart, aEnd, bEnd);
 
-	return RetrievePath(aEnd, bEnd);
+	RetrievePath(aEnd, bEnd);
+	DrawFlood();
+}
+
+
+void Simulation::DrawFlood()
+{
+	int* fft = ffTableTmp.get();
+
+	Vector4* pt = parametrizationTable.get();
+	Vector4* ptt = parametrizationTableTmp.get();
+
+	int max = 0;
+	for (int i = 0; i < N * N; i++)
+		if (fft[i] < 1000000 && fft[i] >= 0 && fft[i] > max)
+			max = fft[i];
+
+	for (int i = 0; i < N * N; i++)
+	{
+		int val = fft[i];
+		if (val == -1)
+			ptt[i] = pt[i];
+		else if (val == 1000000)
+			ptt[i] = Vector4(0, 0, 0, 1);
+		else
+			ptt[i] = Vector4(1, 1, 1, 1) * (1.0 - (1.0 * val / max));
+	}
+
+	for (int i = 0; i < robot.angle.size(); i++)
+		ptt[robot.angle[i].first * 360 + robot.angle[i].second] = Vector4(1, 0, 0, 1);
 }
 
 void Simulation::Animate()
