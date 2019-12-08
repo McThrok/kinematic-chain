@@ -137,8 +137,10 @@ float Robot::InterpolateAngle(float animationProgress, bool firstArm)
 
 	float end = NormalizeAngle(firstArm ? angle[idx + 1].first : angle[idx + 1].second);
 
-	if (abs(end - start) > 180)
+	if (end - start > 180)
 		end -= 360;
+	else if (start - end > 180)
+		start -= 360;
 
 	return NormalizeAngle(start + localProgress * (end - start));
 }

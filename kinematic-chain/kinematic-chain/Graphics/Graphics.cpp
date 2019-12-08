@@ -152,8 +152,8 @@ void Graphics::RenderAnimation()
 		RobotState rs = simulation->robot.GetState(simulation->time/simulation->animationTime);
 		if (!rs.isEmpty)
 		{
-			RenderSquare(rs.armMatrix1, Vector4(1, 1, 0, 1));
-			RenderSquare(rs.armMatrix2, Vector4(1, 1, 0, 1));
+			RenderSquare(rs.armMatrix1, Vector4(0, 1, 0, 1));
+			RenderSquare(rs.armMatrix2, Vector4(0, 1, 0, 1));
 		}
 	}
 }
@@ -170,8 +170,8 @@ void Graphics::RenderArms()
 	RobotState end = simulation->robot.GetState(1);
 	if (!end.isEmpty)
 	{
-		RenderSquare(end.armMatrix1, Vector4(1, 0, 1, 1));
-		RenderSquare(end.armMatrix2, Vector4(1, 0, 1, 1));
+		RenderSquare(end.armMatrix1, Vector4(0, 0, 1, 1));
+		RenderSquare(end.armMatrix2, Vector4(0, 0, 1, 1));
 	}
 }
 void Graphics::RenderAxis()
