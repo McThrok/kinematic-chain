@@ -27,7 +27,7 @@ RobotState Robot::GetState(float animationProgress)
 
 	if (animationProgress == 0)
 	{
-		if (properAnglesStart)
+		if (GetProperAngles(true))
 		{
 			rs.armAngle1 = arm1.GetAngle(true);
 			rs.armAngle2 = arm2.GetAngle(true);
@@ -40,7 +40,7 @@ RobotState Robot::GetState(float animationProgress)
 	}
 	else if (animationProgress == 1)
 	{
-		if (properAnglesEnd)
+		if (GetProperAngles(false))
 		{
 			rs.armAngle1 = arm1.GetAngle(false);
 			rs.armAngle2 = arm2.GetAngle(false);
@@ -89,6 +89,7 @@ void Robot::SetPosition(Vector2 position, bool start)
 	float* angleAlt1;
 	float* angleAlt2;
 	bool* properAngles;
+	bool* properAnglesAlt;
 
 	if (start)
 	{
@@ -97,6 +98,7 @@ void Robot::SetPosition(Vector2 position, bool start)
 		angleAlt1 = &arm1.startAngleAlt;
 		angleAlt2 = &arm2.startAngleAlt;
 		properAngles = &properAnglesStart;
+		properAnglesAlt = &properAnglesStartAlt;
 	}
 	else
 	{
@@ -105,6 +107,7 @@ void Robot::SetPosition(Vector2 position, bool start)
 		angleAlt1 = &arm1.endAngleAlt;
 		angleAlt2 = &arm2.endAngleAlt;
 		properAngles = &properAnglesEnd;
+		properAnglesAlt = &properAnglesEndAlt;
 	}
 
 	float beta = atan2f(py, px);
@@ -114,9 +117,11 @@ void Robot::SetPosition(Vector2 position, bool start)
 	if (isnan(beta) || isnan(delta) || isnan(gamma))
 	{
 		*properAngles = false;
+		*properAnglesAlt = false;
 		return;
 	}
 	*properAngles = true;
+	*properAnglesAlt = true;
 
 	*angle1 = XMConvertToDegrees(beta + delta);
 	*angle2 = XMConvertToDegrees(XM_PI + gamma);

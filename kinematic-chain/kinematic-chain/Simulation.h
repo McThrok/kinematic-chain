@@ -33,6 +33,8 @@ public:
 
 	void Init();
 	void UpdateParametrization();
+	int CheckPosition(float angle1, float angle2);
+	void SetPosition(Vector2 position, bool start);
 
 	float paused;
 	float time;

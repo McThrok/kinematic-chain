@@ -44,7 +44,10 @@ class Robot
 {
 public:
 	bool properAnglesStart;
+	bool properAnglesStartAlt;
 	bool properAnglesEnd;
+	bool properAnglesEndAlt;
+	bool GetProperAngles(bool start) { return start ? useAltStart ? properAnglesStartAlt : properAnglesStart : useAltEnd ? properAnglesEndAlt : properAnglesEnd; }
 	Arm arm1;
 	Arm arm2;
 

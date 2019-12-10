@@ -77,13 +77,13 @@ void Engine::HandleInput()
 			{
 				Vector2 ScreenOffest(gfx.windowWidth / 2, -gfx.windowHeight / 2);
 				Vector2 p = Vector2(me.GetPosX(), -me.GetPosY()) - ScreenOffest;
-				simulation.robot.SetPosition(p, true);
+				simulation.SetPosition(p, true);
 			}
 			if (me.GetType() == MouseEvent::RPress)
 			{
 				Vector2 ScreenOffest(gfx.windowWidth / 2, -gfx.windowHeight / 2);
 				Vector2 p = Vector2(me.GetPosX(), -me.GetPosY()) - ScreenOffest;
-				simulation.robot.SetPosition(p, false);
+				simulation.SetPosition(p, false);
 			}
 		}
 

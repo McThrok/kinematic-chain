@@ -20,36 +20,44 @@ void Simulation::Init()
 
 	UpdateParametrization();
 }
+
 void Simulation::UpdateParametrization()
 {
-	Vector2 v1(0, 0);
-
 	for (int i = 0; i < N; i++)
 	{
-		Matrix t1 = Matrix::CreateTranslation(Vector3(robot.arm1.length, 0, 0));
-		Matrix r1 = Matrix::CreateRotationY(XMConvertToRadians(-i));
-
-		Vector3 w2 = XMVector3TransformCoord(Vector3(robot.arm1.length, 0, 0), r1);
-		Vector2 v2(w2.x, w2.z);
-
 		for (int j = 0; j < N; j++)
 		{
-			Matrix r2 = Matrix::CreateRotationY(XMConvertToRadians(-j));
-			Matrix m = r2 * t1 * r1;
-
-			Vector3 w3 = XMVector3TransformCoord(Vector3(robot.arm2.length, 0, 0), m);
-			Vector2 v3(w3.x, w3.z);
-
-
-			Vector4 color = this->color;
-			if (Obstacles.CheckSegment(v1, v2, color))
-				Obstacles.CheckSegment(v2, v3, color);
+			int idx = CheckPosition(i, j);
+			Vector4 color = idx == -1 ? this->color : Obstacles.obstacles[idx].color;
 
 			parametrizationTable.get()[i * N + j] = color;
 			ffTable.get()[i * N + j] = color == this->color ? 1000000 : -1;
-
 		}
+
 	}
+}
+
+int Simulation::CheckPosition(float angle1, float angle2)
+{
+	Vector2 v1(0, 0);
+
+	Matrix t1 = Matrix::CreateTranslation(Vector3(robot.arm1.length, 0, 0));
+	Matrix r1 = Matrix::CreateRotationY(XMConvertToRadians(-angle1));
+
+	Vector3 w2 = XMVector3TransformCoord(Vector3(robot.arm1.length, 0, 0), r1);
+	Vector2 v2(w2.x, w2.z);
+
+	Matrix r2 = Matrix::CreateRotationY(XMConvertToRadians(-angle2));
+	Matrix m = r2 * t1 * r1;
+
+	Vector3 w3 = XMVector3TransformCoord(Vector3(robot.arm2.length, 0, 0), m);
+	Vector2 v3(w3.x, w3.z);
+
+	int result = Obstacles.CheckSegment(v1, v2);
+	if (result == -1)
+		result = Obstacles.CheckSegment(v2, v3);
+
+	return result;
 }
 
 void Simulation::ClearFloodTable()
@@ -152,7 +160,7 @@ void Simulation::FindPath()
 {
 	ClearFloodTable();
 
-	if (!robot.properAnglesStart || !robot.properAnglesEnd)
+	if (!robot.GetProperAngles(true) || !robot.GetProperAngles(true))
 	{
 		robot.angle.clear();
 	}
@@ -171,7 +179,6 @@ void Simulation::FindPath()
 
 	DrawFlood();
 }
-
 
 void Simulation::DrawFlood()
 {
@@ -213,7 +220,7 @@ void Simulation::UpdateAnimation(float dt)
 	if (paused)
 		return;
 
-	time += dt/1000;
+	time += dt / 1000;
 }
 
 int Simulation::NormalizeAngle(int angle)
@@ -222,4 +229,20 @@ int Simulation::NormalizeAngle(int angle)
 	while (angle >= 360) angle -= 360;
 
 	return angle;
+}
+
+void Simulation::SetPosition(Vector2 position, bool start)
+{
+	robot.SetPosition(position, start);
+
+	if (start)
+	{
+		robot.properAnglesStart &= CheckPosition(robot.arm1.startAngle, robot.arm2.startAngle);
+		robot.properAnglesStartAlt &= CheckPosition(robot.arm1.startAngleAlt, robot.arm2.startAngleAlt);
+	}
+	else
+	{
+		robot.properAnglesEnd &= CheckPosition(robot.arm1.endAngle, robot.arm2.endAngle);
+		robot.properAnglesEndAlt &= CheckPosition(robot.arm1.endAngleAlt, robot.arm2.endAngleAlt);
+	}
 }

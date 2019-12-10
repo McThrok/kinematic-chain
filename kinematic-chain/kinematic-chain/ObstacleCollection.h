@@ -38,7 +38,7 @@ public:
 	Vector4 GetRandomColor();
 	float GetRandomFloat(float min, float max);
 
-	bool CheckSegment(Vector2 v1, Vector2 v2, Vector4& color);
+	int CheckSegment(Vector2 v1, Vector2 v2);
 	bool SegmentIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2);
 	bool OnSegment(Vector2 p, Vector2 q, Vector2 r);
 	int CheckOrientation(Vector2 p, Vector2 q, Vector2 r);

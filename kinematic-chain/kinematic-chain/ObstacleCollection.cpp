@@ -58,26 +58,22 @@ float ObstacleCollection::GetRandomFloat(float min, float max)
 	return  std::uniform_real_distribution<float>{min, max}(gen);
 }
 
-bool ObstacleCollection::CheckSegment(Vector2 v1, Vector2 v2, Vector4& color)
+int ObstacleCollection::CheckSegment(Vector2 v1, Vector2 v2)
 {
-	for (auto& o : obstacles)
+	for (int i = 0; i < obstacles.size(); i++)
 	{
+		Obstacle& o = obstacles[i];
 		Vector2 p = o.position;
 		Vector2 s = o.size;
-
-		bool intersect = false;
 
 		if (SegmentIntersect(v1, v2, p, Vector2(p.x + s.x, p.y))
 			|| SegmentIntersect(v1, v2, p, Vector2(p.x, p.y + s.y))
 			|| SegmentIntersect(v1, v2, Vector2(p.x + s.x, p.y), p + s)
 			|| SegmentIntersect(v1, v2, Vector2(p.x, p.y + s.y), p + s))
-		{
-			color = o.color;
-			return false;
-		}
+			return i;
 	}
 
-	return true;
+	return -1;
 }
 bool ObstacleCollection::SegmentIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2)
 {
