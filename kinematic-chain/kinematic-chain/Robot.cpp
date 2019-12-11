@@ -3,8 +3,8 @@
 
 void Robot::Init()
 {
-	arm1.length = 150;
-	arm2.length = 100;
+	arm1.length = 200;
+	arm2.length = 150;
 
 	useAltStart = false;
 	useAltEnd = false;
@@ -116,10 +116,12 @@ void Robot::SetPosition(Vector2 position, bool start)
 
 	if (isnan(beta) || isnan(delta) || isnan(gamma))
 	{
-		*properAngles = false;
-		*properAnglesAlt = false;
-		return;
+			*properAngles = false;
+			*properAnglesAlt = false;
+			return;
 	}
+	
+
 	*properAngles = true;
 	*properAnglesAlt = true;
 
@@ -128,6 +130,7 @@ void Robot::SetPosition(Vector2 position, bool start)
 
 	*angleAlt1 = XMConvertToDegrees(beta - delta);
 	*angleAlt2 = XMConvertToDegrees(XM_PI - gamma);
+	
 }
 
 float Robot::InterpolateAngle(float animationProgress, bool firstArm)

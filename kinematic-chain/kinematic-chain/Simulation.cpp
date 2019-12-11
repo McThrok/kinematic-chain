@@ -237,12 +237,12 @@ void Simulation::SetPosition(Vector2 position, bool start)
 
 	if (start)
 	{
-		robot.properAnglesStart &= CheckPosition(robot.arm1.startAngle, robot.arm2.startAngle);
-		robot.properAnglesStartAlt &= CheckPosition(robot.arm1.startAngleAlt, robot.arm2.startAngleAlt);
+		robot.properAnglesStart &= CheckPosition(robot.arm1.startAngle, robot.arm2.startAngle)<0;
+		robot.properAnglesStartAlt &= CheckPosition(robot.arm1.startAngleAlt, robot.arm2.startAngleAlt)<0;
 	}
 	else
 	{
-		robot.properAnglesEnd &= CheckPosition(robot.arm1.endAngle, robot.arm2.endAngle);
-		robot.properAnglesEndAlt &= CheckPosition(robot.arm1.endAngleAlt, robot.arm2.endAngleAlt);
+		robot.properAnglesEnd &= CheckPosition(robot.arm1.endAngle, robot.arm2.endAngle) < 0;
+		robot.properAnglesEndAlt &= CheckPosition(robot.arm1.endAngleAlt, robot.arm2.endAngleAlt) < 0;
 	}
 }

@@ -57,7 +57,7 @@ void Graphics::RenderGui() {
 }
 
 void Graphics::RenderMainPanel() {
-	ImGui::SetNextWindowSize(ImVec2(500, 450), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(400, 520), ImGuiCond_Once);
 	ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_Once);
 	if (!ImGui::Begin("Main Panel"))
 	{
@@ -113,7 +113,7 @@ void Graphics::RenderMainPanel() {
 		if (ImGui::Button("Delete"))
 			simulation->Obstacles.DeleteSelected();
 
-		ImGui::ColorPicker3("color", &o.color.x);
+		ImGui::ColorEdit3("color", &o.color.x);
 	}
 	ImGui::End();
 }
